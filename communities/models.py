@@ -7,7 +7,9 @@ from django.conf import settings
 class Community(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    is_private = models.BooleanField(default=False)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_private = models.BooleanField(default=False) # hidden from front page
+    require_join_approval = models.BooleanField(default=False) # only members can post
 
     slug = models.SlugField(max_length=100, unique=True)
 
@@ -16,6 +18,9 @@ class Community(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return f'/community/{self.slug}'
 
     def save(self, *args, **kwargs):
         if not self.slug:
