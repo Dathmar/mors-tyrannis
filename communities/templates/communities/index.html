@@ -2,14 +2,15 @@
 {% block title %}<title>Mors Tyrannis | Communities</title>{% endblock %}
 {% block content %}
 <div class="container">
+    {% for community in communities %}
     <div class="row">
         <div class="col">
-            test
+            <a href="{% url 'communities:detail' community.slug %}">{{ community.name }}</a>
         </div>
         <div class="col">
-            test
+            {{ community.description }}
         </div>
     </div>
-    test
+    {% endfor %}
 </div>
 {% endblock %}
