@@ -20,7 +20,7 @@ class Community(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f'/community/{self.slug}'
+        return f'/c/{self.slug}'
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -85,11 +85,15 @@ class CommunityBans(models.Model):
 
 
 class Post(models.Model):
+    post_types = ((0, 'text'), (1, 'image'), (2, 'link'), (3, 'poll'))
+
     community = models.ForeignKey(Community, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     title = models.CharField(max_length=100)
     content = models.TextField()
+
+    post_type = models.IntegerField(choices=post_types, default=0)
 
     like_count = models.IntegerField(default=0)
     dislike_count = models.IntegerField(default=0)
