@@ -22,7 +22,7 @@ def community(request, community_slug):
 class CreateView(LoginRequiredMixin, View):
     login_url = f'/accounts/login/?next=/c/create/'
     form = CommunityForm
-    template_name = 'communities/create.html'
+    template_name = 'communities/create-community.html'
 
     def get(self, request):
         form = self.form()
