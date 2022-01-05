@@ -95,6 +95,8 @@ class Post(models.Model):
 
     post_type = models.IntegerField(choices=post_types, default=0)
 
+    nsfw_flag = models.BooleanField(default=False)
+
     like_count = models.IntegerField(default=0)
     dislike_count = models.IntegerField(default=0)
 

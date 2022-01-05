@@ -22,5 +22,7 @@ class CommunityForm(forms.Form):
 
 
 class PostForm(forms.Form):
+    post_type = forms.ChoiceField(choices=((0, 'text'), (1, 'image'), (2, 'link')), required=True)
+    title = forms.CharField(max_length=3000, required=True)
     content = forms.CharField()
-
+    nsfw_flag = forms.BooleanField(required=False)
