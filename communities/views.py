@@ -1,9 +1,13 @@
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import render, reverse, get_object_or_404, HttpResponse, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import CommunityForm, PostForm
-from .models import Community, Post
+from .models import Community, Post, PostComment, PostCommentLike
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Create your views here.
@@ -40,7 +44,7 @@ class CreateCommunityView(LoginRequiredMixin, View):
             )
             community.save()
 
-            return reverse(request, 'communities:community', kwargs={'community_slug': community.slug})
+            return reverse(request, 'communities:index', kwargs={'community_slug': community.slug})
         return render(request, self.template_name, {'form': form})
 
 
@@ -68,6 +72,23 @@ class CreatePostView(LoginRequiredMixin, View):
             )
             post.save()
 
-            return view_community(request, community_slug)
+            return redirect('communities:detail', community_slug=community.slug)
 
         return render(request, self.template_name, {'form': form})
+
+
+def post_view(request, *args, **kwargs):
+    post = get_object_or_404(Post, id=kwargs['post_id'])
+    return render(request, 'communities/post.html', {'post': post})
+
+
+def upvote_post_comment(request, *args, **kwargs):
+    post = get_object_or_404(Post, id=kwargs['post_id'])
+    PostCommentLike.toggle_upvote(user=request.user, post=post)
+    return HttpResponse(status=200)
+
+
+def downvote_post_comment(request, *args, **kwargs):
+    post = get_object_or_404(Post, id=kwargs['post_id'])
+    PostCommentLike.toggle_downvote(user=request.user, post=post)
+    return HttpResponse(status=200)

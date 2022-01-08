@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}<title>Mors Tyrannis | Create Post</title>{% endblock %}
 {% block content %}
 <div class="container">
@@ -12,14 +13,11 @@
         </div>
     </div>
     {% for post in posts %}
-    <div class="row">
-        <div class="col-4">{{ post.title }}</div>
-        <div class="col-2">{{ post.user }}</div>
-        <div class="col-1">{{ post.like_count }}</div>
-        <div class="col-1">{{ post.dislike_count }}</div>
-        <div class="col-1">{{ post.created_at }}</div>
-
-    </div>
+    {% include 'communities/post-card.html' %}
     {% endfor %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/session_cookie.js' %}"></script>
+<script src="{% static 'js/up-down-vote.js' %}"></script>
 {% endblock %}

@@ -1,6 +1,12 @@
+import random
+
 from django.db import models
 from django.utils.text import slugify
+from django.shortcuts import reverse
 from django.conf import settings
+import logging
+
+logger = logging.getLogger('app_api')
 
 
 # Create your models here.
@@ -20,7 +26,7 @@ class Community(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f'/c/{self.slug}'
+        return reverse('community_detail', kwargs={'slug': self.slug})
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -100,6 +106,8 @@ class Post(models.Model):
     like_count = models.IntegerField(default=0)
     dislike_count = models.IntegerField(default=0)
 
+    comment_count = models.IntegerField(default=0)
+
     is_sticky = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -109,13 +117,13 @@ class Post(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return f'/c/{self.community.slug}/comments/{self.id}'
+        return reverse('communities:view-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
 
-    def get_like_url(self):
-        return f'/c/{self.community.slug}/comments/{self.id}/like'
+    def get_upvote_url(self):
+        return reverse('communities:upvote-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
 
-    def get_unlike_url(self):
-        return f'/c/{self.community.slug}/comments/{self.id}/unlike'
+    def get_downvote_url(self):
+        return reverse('communities:downvote-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
 
     def total_rep(self):
         return self.like_count - self.dislike_count
@@ -138,14 +146,20 @@ class PostComment(models.Model):
     def __str__(self):
         return self.content
 
+    def save(self, *args, **kwargs):
+        # if this is a new comment then add 1 to the comment count for the post.
+        if not PostComment.objects.filter(id=self.id).exists():
+            self.post.comment_count += 1
+            self.post.save()
+
     def get_absolute_url(self):
         return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}'
 
-    def get_like_url(self):
-        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/like'
+    def get_upvote_url(self):
+        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/upvote'
 
-    def get_unlike_url(self):
-        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/unlike'
+    def get_downvote_url(self):
+        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/downvote'
 
     def total_rep(self):
         return self.like_count - self.dislike_count
@@ -160,24 +174,135 @@ class PostCommentLike(models.Model):
     def __str__(self):
         return self.user.username
 
-    def add_upvote(self, post, post_comment=None):
-        self.post = post
-        self.post_comment = post_comment
+    @staticmethod
+    def toggle_upvote(user, post, post_comment=None):
+        logger.info(f'Post {post.id} downvotes = {post.dislike_count} upvotes = {post.like_count}')
+        if PostCommentLike.upvote_exists(user=user, post=post, post_comment=post_comment):  # if an upvote exists then delete it
+            logger.info(f'Upvote exists for {user.username} on post {post.id}')
+            PostCommentLike.remove_upvote(user=user, post=post, post_comment=post_comment)
+        else:
+            logger.info(f'Upvote does not exist for {user.username} on post {post.id}')
+            PostCommentLike.add_upvote(user=user, post=post, post_comment=post_comment)
 
-        # if this is a post comment then add the rep to the comment
-        if self.post_comment:
-            self.post_comment.like_count += 1
-            self.post_comment.save()
-        else: # otherwise add the rep to the post
-            self.post.like_count += 1
-            self.post.save()
+        if PostCommentLike.downvote_exists(user=user, post=post, post_comment=post_comment):  # if a downvote exists then delete it
+            logger.info(f'Downvote exists for {user.username} on post {post.id}')
+            PostCommentLike.remove_downvote(user=user, post=post, post_comment=post_comment)
+        logger.info(f'Post {post.id} downvotes = {post.dislike_count} upvotes = {post.like_count}')
 
-        if not self.upvote_exists():
-            self.save()
+    @staticmethod
+    def toggle_downvote(user, post, post_comment=None):
+        logger.info(f'Post {post.id} downvotes = {post.dislike_count} upvotes = {post.like_count}')
+        if PostCommentLike.downvote_exists(user=user, post=post, post_comment=post_comment):  # if an upvote exists then delete it
+            logger.info(f'Downvote exists for {user.username} on post {post.id}')
+            PostCommentLike.remove_downvote(user=user, post=post, post_comment=post_comment)
+        else:
+            logger.info(f'Downvote does not exist for {user.username} on post {post.id}')
+            PostCommentLike.add_downvote(user=user, post=post, post_comment=post_comment)
 
-        if self.downvote_exists():
-            self.remove_downvote()
+        if PostCommentLike.upvote_exists(user=user, post=post, post_comment=post_comment):  # if an upvote exists then delete it
+            logger.info(f'Upvote exists for {user.username} on post {post.id}')
+            PostCommentLike.remove_upvote(user=user, post=post, post_comment=post_comment)
+        logger.info(f'Post {post.id} downvotes = {post.dislike_count} upvotes = {post.like_count}')
 
+    @staticmethod
+    def upvote_exists(user, post, post_comment=None):
+        if post_comment:
+            logger.info(f'Checking if upvote exists for {user.username} on post {post.id} and post_comment {post_comment.id}')
+            logger.info(f'Upvote exists: {PostCommentLike.objects.filter(user=user, post=post, post_comment=post_comment, upvote=True).exists()}')
+            return PostCommentLike.objects.filter(user=user, post=post,
+                                                  post_comment=post_comment, upvote=True).exists()
+        else:
+            logger.info(f'Checking if upvote exists for {user.username} on post {post.id}')
+            logger.info(f'Upvote exists: {PostCommentLike.objects.filter(user=user, post=post, upvote=True).exists()}')
+            return PostCommentLike.objects.filter(user=user, post=post,
+                                                  upvote=True).exists()
+
+    @staticmethod
+    def downvote_exists(user, post, post_comment=None):
+        if post_comment:
+            logger.info(f'Checking if downvote exists for {user.username} on post {post.id} and post_comment {post_comment.id}')
+            logger.info(f'Downvote exists: {PostCommentLike.objects.filter(user=user, post=post, post_comment=post_comment, upvote=False).exists()}')
+            return PostCommentLike.objects.filter(user=user, post=post,
+                                                  post_comment=post_comment, upvote=False).exists()
+        else:
+            logger.info(f'Checking if downvote exists for {user.username} on post {post.id}')
+            logger.info(f'Downvote exists: {PostCommentLike.objects.filter(user=user, post=post, upvote=False).exists()}')
+            return PostCommentLike.objects.filter(user=user, post=post,
+                                                  upvote=False).exists()
+
+    @staticmethod
+    def add_upvote(user, post, post_comment=None):
+        logger.info(f'Adding upvote for {user.username} on post {post.id}')
+        post_comment_like = PostCommentLike.objects.create(
+            user=user,
+            upvote=True,
+            post=post,
+            post_comment=post_comment
+        )
+        post_comment_like.save()
+
+    @staticmethod
+    def add_downvote(user, post, post_comment=None):
+        logger.info(f'Adding downvote for {user.username} on post {post.id}')
+        post_comment_like = PostCommentLike.objects.create(
+            user=user,
+            upvote=False,
+            post=post,
+            post_comment=post_comment
+        )
+        post_comment_like.save()
+
+    @staticmethod
+    def remove_upvote(user, post, post_comment=None):
+        if post_comment:
+            logger.info(f'Removing upvote for {user.username} on post {post.id} and post_comment {post_comment.id}')
+            PostCommentLike.objects.get(user=user, post=post,
+                                           post_comment=post_comment, upvote=True).delete()
+        else:
+            logger.info(f'Removing upvote for {user.username} on post {post.id}')
+            PostCommentLike.objects.get(user=user, post=post,
+                                           upvote=True).delete()
+
+    @staticmethod
+    def remove_downvote(user, post, post_comment=None):
+        if post_comment:
+            logger.info(f'Removing downvote for {user.username} on post {post.id} and post_comment {post_comment.id}')
+            PostCommentLike.objects.get(user=user, post=post,
+                                           post_comment=post_comment, upvote=False).delete()
+        else:
+            logger.info(f'Removing downvote for {user.username} on post {post.id}')
+            PostCommentLike.objects.get(user=user, post=post,
+                                           upvote=False).delete()
+
+    def save(self, *args, **kwargs):
+        if not PostCommentLike.objects.filter(id=self.id).exists():
+            if self.upvote:
+                if self.post_comment:
+                    self.post_comment.like_count += 1
+                    self.post_comment.save()
+                else:
+                    self.post.like_count += 1
+                    self.post.save()
+            else:
+                if self.post_comment:
+                    self.post_comment.dislike_count += 1
+                    self.post_comment.save()
+                else:
+                    self.post.dislike_count += 1
+                    self.post.save()
+
+        super(PostCommentLike, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        logger.info(f'Deleting post_comment_like {self.id}')
+        if self.upvote:
+            if self.post_comment:
+                self.post_comment.like_count -= 1
+                self.post_comment.save()
+            else:
+                self.post.like_count -= 1
+                self.post.save()
+        else:
             if self.post_comment:
                 self.post_comment.dislike_count -= 1
                 self.post_comment.save()
@@ -185,43 +310,6 @@ class PostCommentLike(models.Model):
                 self.post.dislike_count -= 1
                 self.post.save()
 
-    def add_downvote(self, post, post_comment=None):
-        self.post = post
-        self.post_comment = post_comment
+        super(PostCommentLike, self).delete(*args, **kwargs)
 
-        if self.post_comment:
-            self.post_comment.dislike_count += 1
-            self.post_comment.save()
-        else:
-            self.post.dislike_count += 1
-            self.post.save()
-
-        if not self.downvote_exists():
-            self.save()
-
-        if self.upvote_exists():
-            if post_comment:
-                self.post_comment.like_count -= 1
-                self.post_comment.save()
-            else:
-                self.post.like_count -= 1
-                self.post.save()
-
-            self.remove_upvote()
-
-    def upvote_exists(self):
-        return PostCommentLike.objects.filter(user=self.user, post=self.post,
-                                              post_comment=self.post_comment, upvote=True).exists()
-
-    def downvote_exists(self):
-        return PostCommentLike.objects.filter(user=self.user, post=self.post,
-                                              post_comment=self.post_comment, upvote=False).exists()
-
-    def remove_upvote(self):
-        PostCommentLike.objects.filter(user=self.user, post=self.post,
-                                       post_comment=self.post_comment, upvote=True).delete()
-
-    def remove_downvote(self):
-        PostCommentLike.objects.filter(user=self.user, post=self.post,
-                                       post_comment=self.post_comment, upvote=False).delete()
 
