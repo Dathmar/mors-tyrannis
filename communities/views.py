@@ -84,11 +84,20 @@ def post_view(request, *args, **kwargs):
 
 def upvote_post_comment(request, *args, **kwargs):
     post = get_object_or_404(Post, id=kwargs['post_id'])
-    PostCommentLike.toggle_upvote(user=request.user, post=post)
+    if 'comment_id' in kwargs.keys():
+        post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
+    else:
+        post_comment = None
+    PostCommentLike.toggle_upvote(user=request.user, post=post, post_comment=post_comment)
     return HttpResponse(status=200)
 
 
 def downvote_post_comment(request, *args, **kwargs):
     post = get_object_or_404(Post, id=kwargs['post_id'])
-    PostCommentLike.toggle_downvote(user=request.user, post=post)
+    if 'comment_id' in kwargs.keys():
+        post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
+    else:
+        post_comment = None
+
+    PostCommentLike.toggle_downvote(user=request.user, post=post, post_comment=post_comment)
     return HttpResponse(status=200)
