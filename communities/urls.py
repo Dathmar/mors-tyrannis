@@ -14,5 +14,4 @@ urlpatterns = [
     path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/upvote/', views.upvote_post_comment, name='upvote-comment'),
     path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/downvote/', views.downvote_post_comment, name='downvote-comment'),
 
-    # path('ship-create-view/', views.CreateView.as_view(), name='ship-create-view'),
 ]
