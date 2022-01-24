@@ -2,8 +2,8 @@ from django.db import models
 from django.utils.text import slugify
 from django.shortcuts import reverse
 from django.conf import settings
+
 import logging
-from users.models import UserMeta
 
 logger = logging.getLogger('app_api')
 
