@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import CommunityForm, PostForm
 from .models import Community, Post, PostComment
 
-from.voting.vote_functions import toggle_upvote, toggle_downvote
+from .voting.vote_functions import toggle_upvote, toggle_downvote, create_voting
 
 import logging
 
@@ -73,6 +73,7 @@ class CreatePostView(LoginRequiredMixin, View):
                 nsfw_flag=form.cleaned_data['nsfw_flag'],
             )
             post.save()
+            create_voting(request.user, post)
 
             return redirect('communities:detail', community_slug=community.slug)
 

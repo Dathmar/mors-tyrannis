@@ -101,3 +101,16 @@ def add_user_rep(rep_val, post, post_comment=None):
     user_meta = UserMeta.objects.get(user=user)
     community_member.add_community_rep(rep_val)
     user_meta.add_reputation(rep_val)
+
+
+def create_voting(user, post, post_comment=None):
+    if post_comment:
+        obj = post_comment
+    else:
+        obj = post
+
+    add_user_rep(rep_val=1, post=post, post_comment=post_comment)
+    add_upvote(user=user, post=post, post_comment=post_comment)
+    obj.like_count += 1
+    obj.save()
+
