@@ -23,6 +23,8 @@ def toggle_upvote(user, post, post_comment=None):
     add_user_rep(rep_change, post, post_comment)
     obj.save()
 
+    return rep_change
+
 
 def toggle_downvote(user, post, post_comment=None):
     obj = post_comment or post
@@ -41,6 +43,8 @@ def toggle_downvote(user, post, post_comment=None):
 
     add_user_rep(rep_change, post, post_comment)
     obj.save()
+
+    return rep_change
 
 
 def add_upvote(user, post, post_comment=None):

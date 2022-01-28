@@ -1,12 +1,14 @@
 from django.shortcuts import render, reverse, get_object_or_404, HttpResponse, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 
 from .forms import CommunityForm, PostForm
 from .models import Community, Post, PostComment
 
 from .voting.vote_functions import toggle_upvote, toggle_downvote, create_voting
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -94,8 +96,9 @@ def upvote_post_comment(request, *args, **kwargs):
         post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
     else:
         post_comment = None
-    toggle_upvote(user=request.user, post=post, post_comment=post_comment)
-    return HttpResponse(status=200)
+    rep_change = toggle_upvote(user=request.user, post=post, post_comment=post_comment)
+    data = {'rep_change': rep_change, 'vote_type': 'up'}
+    return JsonResponse(data, status=200)
 
 
 def downvote_post_comment(request, *args, **kwargs):
@@ -108,8 +111,9 @@ def downvote_post_comment(request, *args, **kwargs):
     else:
         post_comment = None
 
-    toggle_downvote(user=request.user, post=post, post_comment=post_comment)
-    return HttpResponse(status=200)
+    rep_change = toggle_downvote(user=request.user, post=post, post_comment=post_comment)
+    data = {'rep_change': rep_change, 'vote_type': 'down'}
+    return JsonResponse(data, status=200)
 
 
 

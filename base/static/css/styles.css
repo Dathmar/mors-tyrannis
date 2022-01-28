@@ -1,0 +1,24 @@
+.arrow {
+    height: 20px;
+    width: 20px;
+}
+
+.up-arrow-active {
+  background-color: #FFD700;
+  -webkit-mask: url(/static/img/up-arrow.svg) no-repeat center;
+  mask: url(/static/img/up-arrow.svg) no-repeat center;
+}
+
+.up-arrow {
+    background: url(/static/img/up-arrow.svg) no-repeat center / contain;
+}
+
+.down-arrow-active {
+  background-color: #FFD700;
+  -webkit-mask: url(/static/img/down-arrow.svg) no-repeat center;
+  mask: url(/static/img/down-arrow.svg) no-repeat center;
+}
+
+.down-arrow {
+    background: url(/static/img/down-arrow.svg) no-repeat center / contain;
+}

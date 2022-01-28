@@ -123,6 +123,16 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+    def has_user_like(self):
+        pcl = PostCommentLike.objects.filter(post=self, user=self.user)
+        if pcl.exists():
+            pcl = pcl.first()
+            if pcl.upvote:
+                return 'upvote'
+            else:
+                return 'downvote'
+        return False
+
     def get_absolute_url(self):
         return reverse('communities:view-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
 
