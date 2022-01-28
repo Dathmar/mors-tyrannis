@@ -1,6 +1,5 @@
 
 async function vote_post(url, id) {
-    console.log(url);
     let promise = await fetch(url, {
         method: 'POST',
         headers: {
@@ -9,10 +8,22 @@ async function vote_post(url, id) {
         }
     }).then(response => response.json()).then(data => {
         let rep_change = data.rep_change;
-        let vote_elem = $('#post-rep-' + id);
         let vote_type = data.vote_type;
-        let up_arrow_elem = $('#post-up-arrow-' + id);
-        let down_arrow_elem = $('#post-down-arrow-' + id);
+
+        let up_arrow_elem;
+        let down_arrow_elem;
+        let vote_elem;
+
+        if (data.object_type === 'post') {
+            vote_elem = $('#post-rep-' + id);
+            up_arrow_elem = $('#post-up-arrow-' + id);
+            down_arrow_elem = $('#post-down-arrow-' + id);
+        } else {
+            vote_elem = $('#comment-rep-' + id);
+            up_arrow_elem = $('#comment-up-arrow-' + id);
+            down_arrow_elem = $('#comment-down-arrow-' + id);
+        }
+
 
         if (vote_type == 'up') {
             if (up_arrow_elem.hasClass('up-arrow-active')) {
@@ -41,11 +52,4 @@ async function vote_post(url, id) {
         vote_elem.text(parseInt(vote_elem.text()) + rep_change);
 
     }).catch(error => console.log(error));
-    console.log(promise);
-    if (promise.status == 200) {
-        console.log("Successfully voted");
-    } else {
-        console.log("Failed to vote");
-    }
-
 }

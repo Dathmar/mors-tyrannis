@@ -1,0 +1,12 @@
+{% load static %}
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <p class="card-text">{{ post_comment.content }}</p>
+        <p class="card-text">{{ post_comment.has_user_like }}</p>
+        <div class="card-text d-flex">
+            <a href="#"><div id="comment-up-arrow-{{ post_comment.id }}" class="arrow {% if post_comment.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_upvote_url }}', {{ post_comment.id }})"></div></a>
+            <div id="comment-rep-{{ post_comment.id }}" class="text-center" style="width:30px">{{ post_comment.total_rep }}</div>
+            <a href="#"><div id="comment-down-arrow-{{ post_comment.id }}" class="arrow {% if post_comment.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_downvote_url }}', {{ post_comment.id }})"></div></a>
+        </div>
+    </div>
+</div>

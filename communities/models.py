@@ -163,14 +163,24 @@ class PostComment(models.Model):
     def __str__(self):
         return self.content
 
+    def has_user_like(self):
+        pcl = PostCommentLike.objects.filter(post=self.post, user=self.user, post_comment=self)
+        if pcl.exists():
+            pcl = pcl.first()
+            if pcl.upvote:
+                return 'upvote'
+            else:
+                return 'downvote'
+        return False
+
     def get_absolute_url(self):
-        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}'
+        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/'
 
     def get_upvote_url(self):
-        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/upvote'
+        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/upvote/'
 
     def get_downvote_url(self):
-        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/downvote'
+        return f'/c/{self.community.slug}/comments/{self.post.id}/comment/{self.id}/downvote/'
 
     def total_rep(self):
         return self.like_count - self.dislike_count

@@ -4,7 +4,7 @@
         <h5 class="card-title">{{ post.title }}</h5>
         <p class="card-text">{{ post.content }}</p>
         <div class="card-text d-flex">
-            <a href="#" class="card-link">Link to comments</a>
+            <a href="{{ post.get_absolute_url }}" class="card-link">Link to comments</a>
             <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>
             <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
             <a href="#"><div id="post-down-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div></a>

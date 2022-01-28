@@ -7,6 +7,7 @@ logger = logging.getLogger('app_api')
 
 def toggle_upvote(user, post, post_comment=None):
     obj = post_comment or post
+
     rep_change = 0
     if remove_downvote_if_exists(user=user, post=post, post_comment=post_comment):
         rep_change += 1

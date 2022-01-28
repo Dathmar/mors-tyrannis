@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, PostCommentLike, CommunityMember
+from .models import Post, PostCommentLike, CommunityMember, PostComment
 
 
 # Register your models here.
@@ -26,3 +26,6 @@ class CommunityMemberAdmin(admin.ModelAdmin):
     search_fields = ('user', 'community')
     list_editable = ('community', 'community_rep')
 
+@admin.register(PostComment)
+class PostCommentsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'post', 'parent_comment')
