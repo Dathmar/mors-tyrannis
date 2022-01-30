@@ -3,6 +3,7 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 from .forms import CommunityForm, PostForm, CommentForm
 from .models import Community, Post, PostComment
@@ -49,9 +50,34 @@ class CreateCommunityView(LoginRequiredMixin, View):
             )
             community.save()
 
-            return reverse(request, 'communities:index', kwargs={'community_slug': community.slug})
+            return reverse(request, 'communities:list', kwargs={'community_slug': community.slug})
         return render(request, self.template_name, {'form': form})
 
+
+class JoinCommunityView(LoginRequiredMixin, View):
+    login_url = f'/accounts/login/?next=/c/join/'
+    template_name = 'communities/join-community.html'
+
+    def get(self, request, community_slug):
+        return render(request, self.template_name)
+
+    def post(self, request, community_slug):
+        community = get_object_or_404(Community, slug=community_slug)
+        community.add_member(request.user)
+        return redirect(reverse('communities:view', kwargs={'community_slug': community_slug}))
+
+
+def verify_join(request, community_slug):
+    logger.info(f'Verifying join request for {request.user}')
+    community = get_object_or_404(Community, slug=community_slug)
+    user = request.user
+    if request.user.is_authenticated:
+        if community.add_member(user):
+            return JsonResponse({'success': True}, status=200)
+        else:
+            return JsonResponse({'success': False}, status=400)
+    else:
+        return JsonResponse({'status': 'success'}, status=404)
 
 class CreatePostView(LoginRequiredMixin, View):
     login_url = f'/accounts/login/?next=/c/new-post/' # should learn how to use reverse here

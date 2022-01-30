@@ -12,9 +12,9 @@ logger = logging.getLogger('app_api')
 class Community(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    is_private = models.BooleanField(default=False) # hidden from front page
-    require_join_approval = models.BooleanField(default=False) # only members can post
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    is_private = models.BooleanField(default=False)  # hidden from front page
+    require_join_approval = models.BooleanField(default=False)  # only members can post
 
     slug = models.SlugField(max_length=100, unique=True)
 
@@ -26,6 +26,18 @@ class Community(models.Model):
 
     def get_absolute_url(self):
         return reverse('community_detail', kwargs={'slug': self.slug})
+
+    def is_community_member(self, user):
+        if user.is_authenticated:
+            return CommunityMember.objects.filter(community=self, user=user).exists()
+        return False
+
+    def add_member(self, user):
+        if not self.is_community_member(user):
+            member = CommunityMember.objects.create(community=self, user=user)
+            member.save()
+            return True
+        return False
 
     def save(self, *args, **kwargs):
         if not self.slug:

@@ -2,7 +2,7 @@ from django import forms
 
 
 class CommentForm(forms.Form):
-    content = forms.CharField()
+    content = forms.CharField(widget=forms.Textarea, required=True)
 
 
 class CommunityForm(forms.Form):
@@ -24,5 +24,5 @@ class CommunityForm(forms.Form):
 class PostForm(forms.Form):
     post_type = forms.ChoiceField(choices=((0, 'text'), (1, 'image'), (2, 'link')), required=True)
     title = forms.CharField(max_length=3000, required=True)
-    content = forms.CharField()
+    content = forms.CharField(widget=forms.Textarea, required=True)
     nsfw_flag = forms.BooleanField(required=False)

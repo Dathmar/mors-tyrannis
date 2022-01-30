@@ -1,6 +1,12 @@
 from django.contrib import admin
-from .models import Post, PostCommentLike, CommunityMember, PostComment
+from .models import Post, PostCommentLike, CommunityMember, PostComment, Community, CommunityBans
 
+
+@admin.register(Community)
+class CommunityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'creator')
+    list_filter = ('name', 'description', 'creator')
+    search_fields = ('name', 'description', 'creator')
 
 # Register your models here.
 @admin.register(Post)

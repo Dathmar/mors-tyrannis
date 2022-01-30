@@ -7,6 +7,9 @@
 
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block extra_styles %}{% endblock %}
+
+    {% block extra_scripts %}{% endblock %}
 </head>
 <body>
 {% include 'navbar.html' %}

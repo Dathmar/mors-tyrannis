@@ -1,0 +1,4 @@
+mors_tyrannis/settings.py
+manage.py
+*/migrations/*
+*/__pycache__/*
