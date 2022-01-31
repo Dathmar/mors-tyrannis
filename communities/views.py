@@ -26,7 +26,9 @@ def view_community(request, community_slug):
     community = Community.objects.get(slug=community_slug)
     posts = Post.objects.filter(community=community)
 
-    return render(request, 'communities/community.html', {'posts': posts, 'community': community})
+    return render(request, 'communities/community.html', {'posts': posts,
+                                                          'community': community,
+                                                          'is_community_member': community.is_member(request.user)})
 
 
 class CreateCommunityView(LoginRequiredMixin, View):
@@ -50,7 +52,7 @@ class CreateCommunityView(LoginRequiredMixin, View):
             )
             community.save()
 
-            return reverse(request, 'communities:list', kwargs={'community_slug': community.slug})
+            return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
         return render(request, self.template_name, {'form': form})
 
 
@@ -78,6 +80,7 @@ def verify_join(request, community_slug):
             return JsonResponse({'success': False}, status=400)
     else:
         return JsonResponse({'status': 'success'}, status=404)
+
 
 class CreatePostView(LoginRequiredMixin, View):
     login_url = f'/accounts/login/?next=/c/new-post/' # should learn how to use reverse here

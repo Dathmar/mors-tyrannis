@@ -27,13 +27,13 @@ class Community(models.Model):
     def get_absolute_url(self):
         return reverse('community_detail', kwargs={'slug': self.slug})
 
-    def is_community_member(self, user):
+    def is_member(self, user):
         if user.is_authenticated:
             return CommunityMember.objects.filter(community=self, user=user).exists()
         return False
 
     def add_member(self, user):
-        if not self.is_community_member(user):
+        if not self.is_member(user):
             member = CommunityMember.objects.create(community=self, user=user)
             member.save()
             return True

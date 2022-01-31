@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load user_tags %}
 {% load static %}
 {% block title %}<title>Mors Tyrannis | {{ community.name }}</title>{% endblock %}
 {% block extra_scripts %}
@@ -15,7 +14,7 @@
         {% if is_community_member %}
         <a href="{% url 'communities:create-post' community.slug %}" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Create Post</a>
         {% else %}
-        <button onclick="join_attempt('{{ community.slug }}')" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Join Community</button>
+        <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Join Community</button>
         {% endif %}
     </div>
     <div class="row">
