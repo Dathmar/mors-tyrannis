@@ -2,10 +2,6 @@
 {% load static %}
 {% block title %}<title>Mors Tyrannis | {{ community.name }}</title>{% endblock %}
 {% block extra_scripts %}
-{% if not is_community_member %}
-<script src="{% static 'js/session_cookie.js' %}"></script>
-<script src="{% static 'js/join-community.js' %}"></script>
-{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -30,5 +26,8 @@
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'js/session_cookie.js' %}"></script>
+{% if not is_community_member %}
+<script src="{% static 'js/join-community.js' %}"></script>
+{% endif %}
 <script src="{% static 'js/up-down-vote.js' %}"></script>
 {% endblock %}
