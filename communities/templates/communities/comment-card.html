@@ -2,9 +2,9 @@
 <div class="card" style="width: 18rem;">
     <div class="card-body">
         <p class="card-text">{{ post_comment.content }}</p>
-        <div class="card-text d-flex">
-            <span>{{ post_comment.user }}</span>
-            <span>{{ post_comment.created_at }}</span>
+        <div class="card-text">
+            <p>{{ post_comment.user }}</p>
+            <p>{{ post_comment.created_at }}</p>
         </div>
     <a href="{% url 'communities:comment-add-comment' post_comment.community.slug post_comment.post.id post_comment.id %}">Comment on this comment</a>
         <div class="card-text d-flex">
