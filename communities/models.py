@@ -113,7 +113,7 @@ class CommunityBans(models.Model):
 
 
 def post_image_location(instance, filename):
-    return f'post_images/{instance.community.slug}/{instance.post.id}/{filename}'
+    return f'post_images/{instance.community.slug}/{instance.id}/{filename}'
 
 
 class Post(models.Model):

@@ -138,11 +138,12 @@ class CreatePostView(LoginRequiredMixin, View):
                     nsfw_flag=form.cleaned_data['nsfw_flag'],
                 )
             elif post_type == 'image':
+
                 post = Post(
                     title=form.cleaned_data['title'],
                     user=request.user,
                     community=community,
-                    image=form.cleaned_data['image'],
+                    image=form.cleaned_data.get('image'),
                     post_type=post_type,
                     nsfw_flag=form.cleaned_data['nsfw_flag'],
                 )
