@@ -22,3 +22,8 @@
 .down-arrow {
     background: url(/static/img/down-arrow.svg) no-repeat center / contain;
 }
+
+.card {
+    width: 80% !important;
+    max-width: 1000px !important;
+}
