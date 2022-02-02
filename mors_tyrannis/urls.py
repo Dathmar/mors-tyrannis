@@ -20,6 +20,7 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.storage import staticfiles_storage
 
 urlpatterns = [
+    path('', include('base.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
     path('u/', include('users.urls')),
