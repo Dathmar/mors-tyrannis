@@ -3,7 +3,7 @@
 <div class="card" style="width: 18rem;">
     <div class="card-body">
         <h5 class="card-title">{{ post.title }}</h5>
-        <p class="card-text">{{ post.content }}</p>
+        <p class="card-text">{{ post.content|linebreaks }}</p>
         <div class="card-text d-flex">
             <a href="{{ post.get_absolute_url }}" class="card-link">Link to comments</a>
             <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>

@@ -1,7 +1,7 @@
 {% load static %}
 <div class="card" style="width: 18rem;">
     <div class="card-body">
-        <p class="card-text">{{ post_comment.content }}</p>
+        <p class="card-text">{{ post_comment.content|linebreaks }}</p>
         <div class="card-text">
             <p>{{ post_comment.user }}</p>
             <p>{{ post_comment.created_at }}</p>
