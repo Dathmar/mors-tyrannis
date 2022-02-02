@@ -1,5 +1,5 @@
 from django import forms
-
+from .models import Post
 
 class CommentForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, required=True)
@@ -21,8 +21,37 @@ class CommunityForm(forms.Form):
         return self.cleaned_data['name']
 
 
-class PostForm(forms.Form):
-    post_type = forms.ChoiceField(choices=((0, 'text'), (1, 'image'), (2, 'link')), required=True)
-    title = forms.CharField(max_length=3000, required=True)
-    content = forms.CharField(widget=forms.Textarea, required=True)
-    nsfw_flag = forms.BooleanField(required=False)
+class TextPostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['post_type', 'title', 'content', 'nsfw_flag']
+        widgets = {
+            'post_type': forms.Select(attrs={'onchange': 'change_post_type(this)'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Title'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Content'}),
+            'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class ImagePostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['post_type', 'title', 'image', 'nsfw_flag']
+        widgets = {
+            'post_type': forms.Select(attrs={'onchange': 'change_post_type(this)'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Title'}),
+            'image': forms.FileInput(),
+            'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class LinkPostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['post_type', 'title', 'url', 'nsfw_flag']
+        widgets = {
+            'post_type': forms.Select(attrs={'onchange': 'change_post_type(this)'}, choices=Post.post_types),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Title'}),
+            'url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Content'}),
+            'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }

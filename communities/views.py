@@ -1,11 +1,11 @@
 from django.shortcuts import render, reverse, get_object_or_404, HttpResponse, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
 
-from .forms import CommunityForm, PostForm, CommentForm
+from .forms import CommunityForm, CommentForm, LinkPostForm, TextPostForm, ImagePostForm
 from .models import Community, Post, PostComment
 
 from .voting.vote_functions import toggle_upvote, toggle_downvote, create_voting
@@ -82,28 +82,70 @@ def verify_join(request, community_slug):
         return JsonResponse({'status': 'success'}, status=404)
 
 
+def change_form_type(request, form_type):
+    if form_type == 'text':
+        form = TextPostForm()
+    elif form_type == 'link':
+        form = LinkPostForm()
+    elif form_type == 'image':
+        form = ImagePostForm()
+    else:
+        return HttpResponseBadRequest()
+    t = form.as_table()
+    return JsonResponse({'form_html': t}, status=200)
+
+
 class CreatePostView(LoginRequiredMixin, View):
     login_url = f'/accounts/login/?next=/c/new-post/' # should learn how to use reverse here
-    form = PostForm
+    link_form = LinkPostForm
+    text_form = TextPostForm
+    image_form = ImagePostForm
     template_name = 'communities/create-post.html'
     template_post_created = 'communities/index.html'
 
     def get(self, request, community_slug=None):
-        form = self.form()
-        return render(request, self.template_name, {'form': form})
+        image_form = self.image_form()
+        return render(request, self.template_name, {'form': image_form})
 
     def post(self, request, community_slug):
-        form = self.form(request.POST)
+        post_type = request.POST.get('post_type')
+        if post_type == 'link':
+            form = self.link_form(request.POST)
+        elif post_type == 'text':
+            form = self.text_form(request.POST)
+        elif post_type == 'image':
+            form = self.image_form(request.POST, request.FILES)
+        else:
+            return HttpResponseBadRequest()
         if form.is_valid():
             community = get_object_or_404(Community, slug=community_slug)
-            post = Post(
-                community=community,
-                user=request.user,
-                title=form.cleaned_data['title'],
-                content=form.cleaned_data['content'],
-                post_type=form.cleaned_data['post_type'],
-                nsfw_flag=form.cleaned_data['nsfw_flag'],
-            )
+            if post_type == 'link':
+                post = Post(
+                    title=form.cleaned_data['title'],
+                    url=form.cleaned_data['url'],
+                    user=request.user,
+                    community=community,
+                    post_type=post_type,
+                    nsfw_flag=form.cleaned_data['nsfw_flag'],
+                )
+            elif post_type == 'text':
+                post = Post(
+                    community=community,
+                    user=request.user,
+                    title=form.cleaned_data['title'],
+                    content=form.cleaned_data['content'],
+                    post_type=post_type,
+                    nsfw_flag=form.cleaned_data['nsfw_flag'],
+                )
+            elif post_type == 'image':
+                post = Post(
+                    title=form.cleaned_data['title'],
+                    user=request.user,
+                    community=community,
+                    image=form.cleaned_data['image'],
+                    post_type=post_type,
+                    nsfw_flag=form.cleaned_data['nsfw_flag'],
+                )
             post.save()
             create_voting(request.user, post)
 

@@ -21,6 +21,9 @@ class Community(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name_plural = 'communities'
+
     def __str__(self):
         return self.name
 
@@ -109,16 +112,22 @@ class CommunityBans(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+def post_image_location(instance, filename):
+    return f'post_images/{instance.community.slug}/{instance.post.id}/{filename}'
+
+
 class Post(models.Model):
-    post_types = ((0, 'text'), (1, 'image'), (2, 'link'), (3, 'poll'))
+    post_types = (('image', 'Image'), ('text', 'Text'), ('link', 'Link'))
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     title = models.CharField(max_length=100)
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to=post_image_location, blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
 
-    post_type = models.IntegerField(choices=post_types, default=0)
+    post_type = models.CharField(max_length=5, choices=post_types, default='image')
 
     nsfw_flag = models.BooleanField(default=False)
 
