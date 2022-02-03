@@ -7,10 +7,9 @@ from django.template.loader import render_to_string
 
 from .forms import CommunityForm, CommentForm, LinkPostForm, TextPostForm, ImagePostForm
 from .models import Community, Post, PostComment
-
 from .voting.vote_functions import toggle_upvote, toggle_downvote, create_voting
 
-import json
+from datetime import datetime
 import logging
 
 logger = logging.getLogger('app_api')
@@ -83,20 +82,115 @@ def verify_join(request, community_slug):
 
 
 def change_form_type(request, form_type):
-    if form_type == 'text':
-        form = TextPostForm()
-    elif form_type == 'link':
-        form = LinkPostForm()
-    elif form_type == 'image':
-        form = ImagePostForm()
-    else:
-        return HttpResponseBadRequest()
+    form = get_form_type(form_type)
     t = form.as_table()
     return JsonResponse({'form_html': t}, status=200)
 
 
+def get_form_type(post_type, data=None, files=None, initial=None):
+    if post_type == 'text':
+        return TextPostForm(data=data, instance=initial)
+    elif post_type == 'link':
+        return LinkPostForm(data=data, instance=initial)
+    elif post_type == 'image':
+        return ImagePostForm(data=data, files=files, instance=initial)
+    else:
+        return None
+
+
+class EditPostView(LoginRequiredMixin, View):
+    login_url = f'/accounts/login/?next=/c/'
+    template_name = 'communities/create-post.html'
+
+    def get(self, request, community_slug, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        if post.user == request.user:
+            form = get_form_type(post.post_type, initial=post)
+            return render(request, self.template_name, {'form': form, 'post': post, 'edit': True})
+        else:
+            return HttpResponseBadRequest()
+
+    def post(self, request, community_slug, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        post_type = request.POST.get('post_type')
+        if post.user == request.user:
+            form = get_form_type(post_type, data=request.POST, files=request.FILES, initial=post)
+            if form.is_valid():
+                community = get_object_or_404(Community, slug=community_slug)
+                post = get_post_object_from_form(user=request.user, community=community, form=form,
+                                                 post_type=post_type, post=post)
+                post.save()
+                return redirect(reverse('communities:detail', kwargs={'community_slug': community_slug}))
+            else:
+                return HttpResponseBadRequest()
+        else:
+            return HttpResponseBadRequest()
+
+
+def get_post_object_from_form(user, community, form, post_type, post=None):
+    if post:
+        edited_at = datetime.now()
+    else:
+        edited_at = None
+
+    if post_type == 'link':
+        if edited_at:
+            post.title = form.cleaned_data['title']
+            post.url = form.cleaned_data['url']
+            post.post_type = post_type
+            post.nsfw_flag = form.cleaned_data['nsfw_flag']
+            post.edited_at = edited_at
+            return post
+        else:
+            return Post.objects.create(
+                title=form.cleaned_data['title'],
+                url=form.cleaned_data['url'],
+                user=user,
+                community=community,
+                post_type=post_type,
+                nsfw_flag=form.cleaned_data['nsfw_flag'],
+            )
+    elif post_type == 'text':
+        if edited_at:
+            post.title = form.cleaned_data['title']
+            post.content = form.cleaned_data['content']
+            post.post_type = post_type
+            post.nsfw_flag = form.cleaned_data['nsfw_flag']
+            post.edited_at = edited_at
+            return post
+        else:
+            return Post.objects.create(
+                community=community,
+                user=user,
+                title=form.cleaned_data['title'],
+                content=form.cleaned_data['content'],
+                post_type=post_type,
+                nsfw_flag=form.cleaned_data['nsfw_flag'],
+            )
+    elif post_type == 'image':
+        if edited_at:
+            image = form.cleaned_data.get('image', None)
+            logger.info(image)
+            post.title = form.cleaned_data['title']
+            if image:
+                post.image = image
+            post.post_type = post_type
+            post.nsfw_flag = form.cleaned_data['nsfw_flag']
+            post.edited_at = edited_at
+            return post
+        else:
+            return Post.objects.create(
+                title=form.cleaned_data['title'],
+                user=user,
+                community=community,
+                image=form.cleaned_data.get('image'),
+                post_type=post_type,
+                nsfw_flag=form.cleaned_data['nsfw_flag'],
+            )
+
+
 class CreatePostView(LoginRequiredMixin, View):
-    login_url = f'/accounts/login/?next=/c/new-post/' # should learn how to use reverse here
+    login_url = f'/accounts/login/?next=/c/new-post/'  # should learn how to use reverse here
     link_form = LinkPostForm
     text_form = TextPostForm
     image_form = ImagePostForm
@@ -109,44 +203,11 @@ class CreatePostView(LoginRequiredMixin, View):
 
     def post(self, request, community_slug):
         post_type = request.POST.get('post_type')
-        if post_type == 'link':
-            form = self.link_form(request.POST)
-        elif post_type == 'text':
-            form = self.text_form(request.POST)
-        elif post_type == 'image':
-            form = self.image_form(request.POST, request.FILES)
-        else:
-            return HttpResponseBadRequest()
+        form = get_form_type(post_type, data=request.POST, files=request.FILES)
         if form.is_valid():
             community = get_object_or_404(Community, slug=community_slug)
-            if post_type == 'link':
-                post = Post(
-                    title=form.cleaned_data['title'],
-                    url=form.cleaned_data['url'],
-                    user=request.user,
-                    community=community,
-                    post_type=post_type,
-                    nsfw_flag=form.cleaned_data['nsfw_flag'],
-                )
-            elif post_type == 'text':
-                post = Post(
-                    community=community,
-                    user=request.user,
-                    title=form.cleaned_data['title'],
-                    content=form.cleaned_data['content'],
-                    post_type=post_type,
-                    nsfw_flag=form.cleaned_data['nsfw_flag'],
-                )
-            elif post_type == 'image':
-
-                post = Post(
-                    title=form.cleaned_data['title'],
-                    user=request.user,
-                    community=community,
-                    image=form.cleaned_data.get('image'),
-                    post_type=post_type,
-                    nsfw_flag=form.cleaned_data['nsfw_flag'],
-                )
+            post = get_post_object_from_form(user=request.user, community=community, form=form,
+                                             post_type=post_type)
             post.save()
             create_voting(request.user, post)
 

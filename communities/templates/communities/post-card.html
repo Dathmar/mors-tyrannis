@@ -1,40 +1,32 @@
 {% load static %}
-{% if post.post_type == 'text' %}
+
 <div class="card" style="width: 18rem;">
     <div class="card-body">
-        <h5 class="card-title">{{ post.title }}</h5>
-        <p class="card-text">{{ post.content|linebreaks }}</p>
-        <div class="card-text d-flex">
-            <a href="{{ post.get_absolute_url }}" class="card-link">Link to comments</a>
-            <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>
-            <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
-            <a href="#"><div id="post-down-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div></a>
-        </div>
-    </div>
-</div>
-{% elif post.post_type == 'image' %}
-<div class="card" style="width: 18rem;">
-    <div class="card-body">
-        <h5 class="card-title">{{ post.title }}</h5>
-        <img src="{{ post.image.url }}" class="card-img-top" alt="">
-        <div class="card-text d-flex">
-            <a href="{{ post.get_absolute_url }}" class="card-link">Link to comments</a>
-            <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>
-            <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
-            <a href="#"><div id="post-down-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div></a>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="card" style="width: 18rem;">
-    <div class="card-body">
+        {% if post.post_type == 'link' %}
         <a href="{{ post.url }}"><h5 class="card-title">{{ post.title }}</h5></a>
+        {% else %}
+        <h5 class="card-title">{{ post.title }}</h5>
+        {% endif %}
+        {% if post.post_type == 'text' %}
+        <p class="card-text">{{ post.content|linebreaks }}</p>
+        {% elif post.post_type == 'image' %}
+        <img src="{{ post.image.url }}" class="card-img-top" alt="">
+        {% endif %}
         <div class="card-text d-flex">
-            <a href="{{ post.get_absolute_url }}" class="card-link">Link to comments</a>
             <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>
             <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
             <a href="#"><div id="post-down-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div></a>
         </div>
+        <div class="card-text">
+            <small class="text-muted">{{ post.user.username }}</small>
+            <small class="text-muted">| Created: {{ post.created_at|date:"F j, Y" }}</small>
+            {% if post.edited_at %}
+            <small class="text-muted">| Edited: {{ post.edited_at|date:"F j, Y" }}</small>
+            {% endif %}
+            {% if post.user == user %}
+            <small class="text-muted">| <a href="{% url 'communities:edit-post' post.community.slug post.id %}">Edit</a></small>
+            {% endif %}
+            <small class="text-muted">| <a href="{{ post.get_absolute_url }}" class="card-link">Comments</a></small>
+        </div>
     </div>
 </div>
-{% endif %}
