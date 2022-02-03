@@ -128,15 +128,15 @@ class Post(models.Model):
     url = models.URLField(blank=True, null=True)
 
     post_type = models.CharField(max_length=5, choices=post_types, default='image')
-
     nsfw_flag = models.BooleanField(default=False)
 
     like_count = models.IntegerField(default=0)
     dislike_count = models.IntegerField(default=0)
 
     comment_count = models.IntegerField(default=0)
-
     is_sticky = models.BooleanField(default=False)
+
+    edited_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -145,7 +145,7 @@ class Post(models.Model):
         return self.title
 
     def has_user_like(self):
-        pcl = PostCommentLike.objects.filter(post=self, user=self.user)
+        pcl = PostCommentLike.objects.filter(post=self, user=self.user, post_comment=None)
         if pcl.exists():
             pcl = pcl.first()
             if pcl.upvote:

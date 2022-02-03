@@ -19,7 +19,11 @@
                 <table id="form-container" class="table table-borderless">
                     {{ form.as_table }}
                 </table>
+                {% if edit %}
+                <button type="submit" class="btn btn-primary">Edit Post</button>
+                {% else %}
                 <button type="submit" class="btn btn-primary">Create Post</button>
+                {% endif %}
             </form>
         </div>
     </div>
