@@ -1,9 +1,28 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}<title>Mors Tyrannis | Top Posts</title>{% endblock %}
 {% block content %}
 <div class="container">
-    {% for post in posts %}
-    {% include 'communities/post-card.html' %}
-    {% endfor %}
+    {% if user.is_anonymous %}
+        <div class="alert alert-info">
+                <strong>You should login for the beta!</strong><br>
+                <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+            </div>
+    {% else %}
+        {%  if posts %}
+            {% for post in posts %}
+            {% include 'communities/post-card.html' %}
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <strong>You should join a community!</strong><br>
+                <a href="{% url 'communities:list' %}" class="btn btn-primary">See our communities</a>
+            </div>
+        {% endif %}
+    {% endif %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/session_cookie.js' %}"></script>
+<script src="{% static 'js/up-down-vote.js' %}"></script>
 {% endblock %}
