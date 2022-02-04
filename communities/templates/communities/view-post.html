@@ -4,9 +4,7 @@
 {% block content %}
 <div class="container">
     {% include 'communities/post-card.html' %}
-    <div class="row">
-        <a href="{% url 'communities:post-add-comment' post.community.slug post.id %}" class="btn btn-primary">Add Comment</a>
-    </div>
+
     {% for post_comment in post_comments %}
     {% include 'communities/comment-card.html' %}
     {% endfor %}
