@@ -10,3 +10,13 @@ def is_community_member(community, user):
         if CommunityMember.objects.filter(community=community, user=user).exists():
             return True
     return False
+
+
+@register.filter(name='has_user_upvote')
+def has_user_upvote(obj, user):
+    return obj.has_user_upvote(user)
+
+
+@register.filter(name='has_user_downvote')
+def has_user_downvote(obj, user):
+    return obj.has_user_downvote(user)
