@@ -6,15 +6,22 @@
 
 {% block content %}
 <div class="container">
-    <div class="row">
     {% if user.is_authenticated %}
+    {% if user == community.creator %}
+    <div class="row">
+        <div class="col">
+            <a href="{% url 'communities:edit' community.slug %}" class="btn btn-primary">Edit Community</a>
+        </div>
+    </div>
+    {% endif %}
+    <div class="row">
         {% if is_community_member %}
         <a href="{% url 'communities:create-post' community.slug %}" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Create Post</a>
         {% else %}
         <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Join Community</button>
         {% endif %}
-    {% endif %}
     </div>
+    {% endif %}
     <div class="row">
         <div class="col-md-12">
             <h1>{{ community.name }}</h1>

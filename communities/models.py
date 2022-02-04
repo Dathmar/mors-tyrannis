@@ -43,7 +43,7 @@ class Community(models.Model):
         return False
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not Community.objects.filter(id=self.id).exists():
             self.slug = slugify(self.name)
 
         super(Community, self).save(*args, **kwargs)

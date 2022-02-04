@@ -24,7 +24,6 @@ def index(request):
 def view_community(request, community_slug):
     community = Community.objects.get(slug=community_slug)
     posts = Post.objects.filter(community=community)
-
     return render(request, 'communities/community.html', {'posts': posts,
                                                           'community': community,
                                                           'is_community_member': community.is_member(request.user)})
@@ -53,6 +52,31 @@ class CreateCommunityView(LoginRequiredMixin, View):
 
             return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
         return render(request, self.template_name, {'form': form})
+
+
+class EditCommunityView(LoginRequiredMixin, View):
+    login_url = f'/accounts/login/?next=/c/'
+    form = CommunityForm
+    template_name = 'communities/create-community.html'
+
+    def get(self, request, community_slug):
+        community = get_object_or_404(Community, slug=community_slug)
+        form = self.form(instance=community)
+        return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
+
+    def post(self, request, community_slug):
+        form = self.form(request.POST)
+        community = get_object_or_404(Community, slug=community_slug)
+        if form.is_valid():
+            community.name = form.cleaned_data['name']
+            community.description = form.cleaned_data['description']
+            community.is_private = form.cleaned_data['is_private']
+            community.require_join_approval = form.cleaned_data['require_join_approval']
+
+            community.save()
+
+            return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
+        return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
 
 
 class JoinCommunityView(LoginRequiredMixin, View):
@@ -299,7 +323,3 @@ def downvote_post_comment(request, *args, **kwargs):
     rep_change = toggle_downvote(user=request.user, post=post, post_comment=post_comment)
     data = {'rep_change': rep_change, 'vote_type': 'down', 'object_type': object_type}
     return JsonResponse(data, status=200)
-
-
-
-

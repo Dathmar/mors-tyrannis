@@ -1,18 +1,21 @@
 from django import forms
-from .models import Post
+from .models import Post, Community
 
 
 class CommentForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, required=True)
 
 
-class CommunityForm(forms.Form):
-    name = forms.CharField(max_length=100, required=True)
-    description = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'size-form-textarea', 'placeholder': 'Community description',
-                                     'rows': '2', 'style': 'width:100%;'}), required=True)
-    is_private = forms.BooleanField(required=False)
-    require_join_approval = forms.BooleanField(required=False)
+class CommunityForm(forms.ModelForm):
+    class Meta:
+        model = Community
+        fields = ['name', 'description', 'is_private', 'require_join_approval']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'is_private': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'require_join_approval': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
 
     def clean_name(self):
         reserved_community_names = ['create', ]
