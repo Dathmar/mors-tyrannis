@@ -1,16 +1,18 @@
+{% load user_tags %}
 {% load static %}
 <div class="card" style="width: 18rem;">
     <div class="card-body">
         <p class="card-text">{{ post_comment.content|linebreaks }}</p>
-        <div class="card-text">
-            <p>{{ post_comment.user }}</p>
-            <p>{{ post_comment.created_at }}</p>
-        </div>
-    <a href="{% url 'communities:comment-add-comment' post_comment.community.slug post_comment.post.id post_comment.id %}">Comment on this comment</a>
         <div class="card-text d-flex">
-            <a href="#"><div id="comment-up-arrow-{{ post_comment.id }}" class="arrow {% if post_comment.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_upvote_url }}', {{ post_comment.id }})"></div></a>
+            <div id="comment-up-arrow-{{ post_comment.id }}" class="arrow {% if post_comment|has_user_upvote:user %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_upvote_url }}', {{ post_comment.id }})"></div>
             <div id="comment-rep-{{ post_comment.id }}" class="text-center" style="width:30px">{{ post_comment.total_rep }}</div>
-            <a href="#"><div id="comment-down-arrow-{{ post_comment.id }}" class="arrow {% if post_comment.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_downvote_url }}', {{ post_comment.id }})"></div></a>
+            <div id="comment-down-arrow-{{ post_comment.id }}" class="arrow {% if post_comment|has_user_downvote:user %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post_comment.get_downvote_url }}', {{ post_comment.id }})"></div>
+        </div>
+        <div class="card-text">
+            <small class="text-muted">{{ post_comment.user.username }}</small>
+            <small class="text-muted">| Created: {{ post_comment.created_at|date:"F j, Y" }}</small>
+
+            <small class="text-muted">| <a href="{% url 'communities:comment-add-comment' post_comment.community.slug post_comment.post.id post_comment.id %}" class="card-link">Add Comment</a></small>
         </div>
     </div>
 </div>

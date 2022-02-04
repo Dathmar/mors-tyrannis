@@ -144,14 +144,25 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-    def has_user_like(self):
-        pcl = PostCommentLike.objects.filter(post=self, user=self.user, post_comment=None)
-        if pcl.exists():
-            pcl = pcl.first()
-            if pcl.upvote:
-                return 'upvote'
-            else:
-                return 'downvote'
+    def comment_count(self):
+        return PostComment.objects.filter(post=self).count()
+
+    def has_user_upvote(self, user):
+        if user.is_authenticated and CommunityMember.objects.filter(community=self.community, user=user).exists():
+            pcl = PostCommentLike.objects.filter(post=self, user=user, post_comment=None, upvote=True)
+            if pcl.exists():
+                pcl = pcl.first()
+                if pcl.upvote:
+                    return True
+        return False
+
+    def has_user_downvote(self, user):
+        if user.is_authenticated and CommunityMember.objects.filter(community=self.community, user=user).exists():
+            pcl = PostCommentLike.objects.filter(post=self, user=user, post_comment=None, upvote=False)
+            if pcl.exists():
+                pcl = pcl.first()
+                if pcl.upvote:
+                    return True
         return False
 
     def get_absolute_url(self):
@@ -184,14 +195,22 @@ class PostComment(models.Model):
     def __str__(self):
         return self.content
 
-    def has_user_like(self):
-        pcl = PostCommentLike.objects.filter(post=self.post, user=self.user, post_comment=self)
-        if pcl.exists():
-            pcl = pcl.first()
-            if pcl.upvote:
-                return 'upvote'
-            else:
-                return 'downvote'
+    def has_user_upvote(self, user):
+        if user.is_authenticated and CommunityMember.objects.filter(community=self.community, user=user).exists():
+            pcl = PostCommentLike.objects.filter(post=self.post, user=user, post_comment=self, upvote=True)
+            if pcl.exists():
+                pcl = pcl.first()
+                if pcl.upvote:
+                    return True
+        return False
+
+    def has_user_downvote(self, user):
+        if user.is_authenticated and CommunityMember.objects.filter(community=self.community, user=user).exists():
+            pcl = PostCommentLike.objects.filter(post=self.post, user=user, post_comment=self, upvote=False)
+            if pcl.exists():
+                pcl = pcl.first()
+                if pcl.upvote:
+                    return True
         return False
 
     def get_absolute_url(self):

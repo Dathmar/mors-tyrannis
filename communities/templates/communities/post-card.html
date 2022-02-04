@@ -1,5 +1,5 @@
 {% load static %}
-
+{% load user_tags %}
 <div class="card" style="width: 18rem;">
     <div class="card-body">
         {% if post.post_type == 'link' %}
@@ -13,9 +13,9 @@
         <img src="{{ post.image.url }}" class="card-img-top" alt="">
         {% endif %}
         <div class="card-text d-flex">
-            <a href="#"><div id="post-up-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'upvote' %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div></a>
+            <div id="post-up-arrow-{{ post.id }}" class="arrow {% if post|has_user_upvote:user %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div>
             <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
-            <a href="#"><div id="post-down-arrow-{{ post.id }}" class="arrow {% if post.has_user_like == 'downvote' %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div></a>
+            <div id="post-down-arrow-{{ post.id }}" class="arrow {% if post|has_user_downvote:user %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div>
         </div>
         <div class="card-text">
             <small class="text-muted">{{ post.user.username }}</small>
@@ -26,7 +26,8 @@
             {% if post.user == user %}
             <small class="text-muted">| <a href="{% url 'communities:edit-post' post.community.slug post.id %}">Edit</a></small>
             {% endif %}
-            <small class="text-muted">| <a href="{{ post.get_absolute_url }}" class="card-link">Comments</a></small>
+            <small class="text-muted">| <a href="{{ post.get_absolute_url }}" class="card-link">Comments</a> {{ post.comment_count }} </small>
+            <small class="text-muted">| <a href="{% url 'communities:post-add-comment' post.community.slug post.id %}" class="card-link">Add Comment</a></small>
         </div>
     </div>
 </div>
