@@ -5,21 +5,21 @@ import logging
 logger = logging.getLogger('app_api')
 
 
-def toggle_upvote(user, post, post_comment=None):
+def toggle_upvote(voting_user, post, post_comment=None):
     obj = post_comment or post
 
     rep_change = 0
-    if remove_downvote_if_exists(user=user, post=post, post_comment=post_comment):
+    if remove_downvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change += 1
         obj.dislike_count -= 1
 
-    if remove_upvote_if_exists(user=user, post=post, post_comment=post_comment):
+    if remove_upvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change -= 1
         obj.like_count -= 1
     else:
         rep_change += 1
         obj.like_count += 1
-        add_upvote(user=user, post=post, post_comment=post_comment)
+        add_upvote(user=voting_user, post=post, post_comment=post_comment)
 
     add_user_rep(rep_change, post, post_comment)
     obj.save()
@@ -27,20 +27,20 @@ def toggle_upvote(user, post, post_comment=None):
     return rep_change
 
 
-def toggle_downvote(user, post, post_comment=None):
+def toggle_downvote(voting_user, post, post_comment=None):
     obj = post_comment or post
     rep_change = 0
-    if remove_upvote_if_exists(user=user, post=post, post_comment=post_comment):
+    if remove_upvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change -= 1
         obj.like_count -= 1
 
-    if remove_downvote_if_exists(user=user, post=post, post_comment=post_comment):
+    if remove_downvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change += 1
         obj.dislike_count -= 1
     else:
         rep_change -= 1
         obj.dislike_count += 1
-        add_downvote(user=user, post=post, post_comment=post_comment)
+        add_downvote(user=voting_user, post=post, post_comment=post_comment)
 
     add_user_rep(rep_change, post, post_comment)
     obj.save()
