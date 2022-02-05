@@ -6,7 +6,7 @@ from django.utils.timezone import now
 class UserMeta(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     reputation = models.IntegerField(default=0)
-    last_notification_check = models.DateTimeField(default=now())
+    last_notification_check = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.user.username

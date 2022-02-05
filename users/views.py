@@ -12,16 +12,12 @@ def index(request):
     return render(request, 'users/index.html')
 
 
-def view_user(request, username):
-    return render(request, 'users/view_user.html')
-
-
 class NotificationCenterView(View):
     def get(self, request):
         user_meta = UserMeta.objects.get(user=request.user)
-        post_comments = PostComment.objects.filter(((Q(post__user=request.user) & Q(post_comment=None))
-                                                    | Q(post_comment__user=request.user))
+        post_comments = PostComment.objects.filter(((Q(post__user=request.user) & Q(postcomment=None))
+                                                    | Q(postcomment__user=request.user))
                                                    & Q(created_at__gt=user_meta.last_notification_check))
-        user_meta.last_notification_check = datetime.now()
+        user_meta.last_notification_check = datetime.utcnow()
         user_meta.save()
-        return render(request, 'users/notification_center.html', {'post_comments': post_comments})
+        return render(request, 'users/notification-center.html', {'post_comments': post_comments})
