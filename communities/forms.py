@@ -36,6 +36,16 @@ class TextPostForm(forms.ModelForm):
             'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def clean_title(self):
+        if not self.cleaned_data['title']:
+            raise forms.ValidationError('Title is required.')
+        return self.cleaned_data['title']
+
+    def clean_content(self):
+        if not self.cleaned_data['content']:
+            raise forms.ValidationError('Content is required.')
+        return self.cleaned_data['content']
+
 
 class ImagePostForm(forms.ModelForm):
     class Meta:
@@ -48,6 +58,16 @@ class ImagePostForm(forms.ModelForm):
             'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def clean_title(self):
+        if not self.cleaned_data['title']:
+            raise forms.ValidationError('Title is required.')
+        return self.cleaned_data['title']
+
+    def clean_image(self):
+        if not self.cleaned_data['image']:
+            raise forms.ValidationError('Image is required.')
+        return self.cleaned_data['image']
+
 
 class LinkPostForm(forms.ModelForm):
     class Meta:
@@ -59,3 +79,14 @@ class LinkPostForm(forms.ModelForm):
             'url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Content'}),
             'nsfw_flag': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def clean_title(self):
+        if not self.cleaned_data['title']:
+            raise forms.ValidationError('Title is required.')
+        return self.cleaned_data['title']
+
+    def clean_url(self):
+        if not self.cleaned_data['url']:
+            raise forms.ValidationError('URL is required.')
+        return self.cleaned_data['url']
+
