@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>Mors Tyrannis | Notification Center</title>{% endblock %}
+{% block content %}
+<div class="container">
+    <h5>Your Notifications</h5>
+
+    {% for post_comment in post_comments %}
+    {% include 'communities/comment-card.html' %}
+    {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/session_cookie.js' %}"></script>
+<script src="{% static 'js/up-down-vote.js' %}"></script>
+{% endblock %}
