@@ -17,8 +17,9 @@
     <div class="row">
         {% if is_community_member %}
         <a href="{% url 'communities:create-post' community.slug %}" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Create Post</a>
-        {% else %}
-        <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Join Community</button>
+        {% endif %}
+        {% if not is_follower %}
+        <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Follow Community</button>
         {% endif %}
     </div>
     {% endif %}
@@ -35,8 +36,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'js/session_cookie.js' %}"></script>
-{% if not is_community_member %}
 <script src="{% static 'js/join-community.js' %}"></script>
-{% endif %}
 <script src="{% static 'js/up-down-vote.js' %}"></script>
 {% endblock %}
