@@ -102,7 +102,17 @@ def add_user_rep(rep_val, post, post_comment=None):
         community = post.community
         user = post.user
 
-    community_member = CommunityMember.objects.get(community=community, user=user)
+    # if user is not a member of the community, add them but follow status is false
+    try:
+        community_member = CommunityMember.objects.get(community=community, user=user)
+    except CommunityMember.DoesNotExist:
+        community_member = CommunityMember.objects.create(
+            community=community,
+            user=user,
+            following=False
+        )
+        community_member.save()
+
     user_meta = UserMeta.objects.get(user=user)
     community_member.add_community_rep(rep_val)
     user_meta.add_reputation(rep_val)

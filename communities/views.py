@@ -26,7 +26,8 @@ def view_community(request, community_slug):
     posts = Post.objects.filter(community=community)
     return render(request, 'communities/community.html', {'posts': posts,
                                                           'community': community,
-                                                          'is_community_member': community.is_member(request.user)})
+                                                          'is_community_member': community.is_member(request.user),
+                                                          'is_follower': community.is_follower(request.user)})
 
 
 class CreateCommunityView(LoginRequiredMixin, View):
@@ -88,7 +89,7 @@ class JoinCommunityView(LoginRequiredMixin, View):
 
     def post(self, request, community_slug):
         community = get_object_or_404(Community, slug=community_slug)
-        community.add_member(request.user)
+        community.add_follower(request.user)
         return redirect(reverse('communities:view', kwargs={'community_slug': community_slug}))
 
 
@@ -97,7 +98,7 @@ def verify_join(request, community_slug):
     community = get_object_or_404(Community, slug=community_slug)
     user = request.user
     if request.user.is_authenticated:
-        if community.add_member(user):
+        if community.add_follower(user):
             return JsonResponse({'success': True}, status=200)
         else:
             return JsonResponse({'success': False}, status=400)
@@ -301,11 +302,13 @@ def upvote_post_comment(request, *args, **kwargs):
     if 'comment_id' in kwargs.keys():
         post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
         object_type = 'comment'
+        user = post_comment.user
     else:
         post_comment = None
         object_type = 'post'
+        user = post.user
 
-    rep_change = toggle_upvote(user=request.user, post=post, post_comment=post_comment)
+    rep_change = toggle_upvote(user=user, post=post, post_comment=post_comment)
     data = {'rep_change': rep_change, 'vote_type': 'up', 'object_type': object_type}
     return JsonResponse(data, status=200)
 
@@ -316,10 +319,12 @@ def downvote_post_comment(request, *args, **kwargs):
     if 'comment_id' in kwargs.keys():
         post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
         object_type = 'comment'
+        user = post_comment.user
     else:
         post_comment = None
         object_type = 'post'
+        user = post.user
 
-    rep_change = toggle_downvote(user=request.user, post=post, post_comment=post_comment)
+    rep_change = toggle_downvote(user=user, post=post, post_comment=post_comment)
     data = {'rep_change': rep_change, 'vote_type': 'down', 'object_type': object_type}
     return JsonResponse(data, status=200)
