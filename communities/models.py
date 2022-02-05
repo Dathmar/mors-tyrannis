@@ -4,6 +4,7 @@ from django.shortcuts import reverse
 from django.conf import settings
 
 import logging
+import re
 
 logger = logging.getLogger('app_api')
 
@@ -35,9 +36,27 @@ class Community(models.Model):
             return CommunityMember.objects.filter(community=self, user=user).exists()
         return False
 
+    def is_follower(self, user):
+        if user.is_authenticated:
+            return CommunityMember.objects.filter(community=self, user=user, following=True).exists()
+        return False
+
     def add_member(self, user):
         if not self.is_member(user):
             member = CommunityMember.objects.create(community=self, user=user)
+            member.save()
+            return True
+        return False
+
+    def add_follower(self, user):
+        if not self.is_member(user):
+            member = CommunityMember.objects.create(community=self, user=user, following=True)
+            member.save()
+            return True
+
+        if not self.is_follower(user):
+            member = CommunityMember.objects.get(community=self, user=user)
+            member.following = True
             member.save()
             return True
         return False
@@ -81,6 +100,7 @@ class CommunityMember(models.Model):
 
     is_admin = models.BooleanField(default=False)
     is_owner = models.BooleanField(default=False)
+    following = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -94,11 +114,6 @@ class CommunityMember(models.Model):
     def add_community_rep(self, rep):
         self.community_rep += rep
         self.save()
-
-
-class UserExtension(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    site_rep = models.IntegerField(default=0)
 
 
 class CommunityBans(models.Model):
@@ -133,13 +148,15 @@ class Post(models.Model):
     like_count = models.IntegerField(default=0)
     dislike_count = models.IntegerField(default=0)
 
-    comment_count = models.IntegerField(default=0)
     is_sticky = models.BooleanField(default=False)
 
     edited_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.title
@@ -176,6 +193,17 @@ class Post(models.Model):
 
     def total_rep(self):
         return self.like_count - self.dislike_count
+
+    def get_embed(self):
+        if self.post_type == 'link':
+            if 'youtube' in self.url:
+                return f'<iframe width="100%" height="100%" src="{you_tube_embed_url(self.url)}" title="YouTube video player" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+        return None
+
+
+def you_tube_embed_url(video_url):
+    regex = r"(?:https:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)"
+    return re.sub(regex, r"https://www.youtube.com/embed/\1", video_url)
 
 
 class PostComment(models.Model):
