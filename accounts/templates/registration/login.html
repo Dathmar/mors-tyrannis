@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}<title>Mors Tyrannis | Login</title>{% endblock %}
+{% block content %}
+    <div class="container">
+        <div style="padding-top: 7.5em">
+            <h2>Login</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" class="btn btn-primary rounded-3 mt-3" value="Login">
+            </form>
+        </div>
+    </div>
+{% endblock %}
