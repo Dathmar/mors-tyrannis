@@ -5,12 +5,12 @@
 {% block content %}
     <div class="container">
         <h2>Sign up</h2>
-        <table class="table">
             <form method="post">
                 {% csrf_token %}
+                <table class="table">
                 {{ form.as_table }}
+                </table>
                 <button type="submit" class="btn btn-primary rounded-3 mt-3">Sign Up</button>
             </form>
-        </table>
     </div>
 {% endblock %}

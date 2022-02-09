@@ -17,12 +17,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.staticfiles.storage import staticfiles_storage
+from django.contrib.staticfiles.storage import staticfiles_storage  # used for icons
 
 urlpatterns = [
     path('', include('base.urls')),
-    path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('accounts.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
     path('u/', include('users.urls')),
     path('c/', include('communities.urls')),

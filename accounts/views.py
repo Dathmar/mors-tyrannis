@@ -6,6 +6,7 @@ from django.views import generic
 
 from .forms import SignUpForm
 from users.models import UserMeta
+from communities.models import Community, CommunityMember
 
 
 class SignUpView(generic.CreateView):
@@ -29,7 +30,18 @@ class SignUpView(generic.CreateView):
             user_meta = UserMeta.objects.create(user=user)
             user_meta.save()
 
+            auto_follow_communities(user)
+
             login(request, user)
             return redirect(self.success_url)
 
 
+def auto_follow_communities(user):
+    auto_communities = Community.objects.filter(auto_follow=True)
+    for community in auto_communities:
+        cm = CommunityMember.objects.create(
+            user=user,
+            community=community,
+            following=True
+        )
+        cm.save()

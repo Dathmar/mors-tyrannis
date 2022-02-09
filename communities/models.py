@@ -19,6 +19,8 @@ class Community(models.Model):
 
     slug = models.SlugField(max_length=100, unique=True)
 
+    auto_follow = models.BooleanField(default=False)  # automatically follow this community on account creation
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
