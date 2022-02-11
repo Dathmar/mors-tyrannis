@@ -33,6 +33,13 @@ class Community(models.Model):
     def get_absolute_url(self):
         return reverse('community_detail', kwargs={'slug': self.slug})
 
+    def has_access(self, user):
+        if self.require_join_approval:
+            if self.is_member(user):
+                return True
+            return CommunityJoinRequest.objects.filter(community=self, user=user, is_approved=True).exists()
+        return True
+
     def is_member(self, user):
         if user.is_authenticated:
             return CommunityMember.objects.filter(community=self, user=user).exists()

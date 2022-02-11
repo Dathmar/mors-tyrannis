@@ -37,7 +37,8 @@ def view_community(request, community_slug):
     return render(request, 'communities/community.html', {'posts': posts,
                                                           'community': community,
                                                           'is_community_member': community.is_member(request.user),
-                                                          'is_follower': community.is_follower(request.user)})
+                                                          'is_follower': community.is_follower(request.user),
+                                                          'is_admin': community.is_admin(request.user)})
 
 
 class RequestJoinView(LoginRequiredMixin, View):
@@ -74,44 +75,59 @@ class ReviewJoinRequests(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         community_slug = kwargs.get('community_slug')
         community = get_object_or_404(Community, slug=community_slug)
-        status = kwargs.get('status', None)
-        if status == 'accepted':
-            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=True,
-                                                                is_rejected=False)
-        elif status == 'rejected':
-            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
-                                                                is_rejected=True)
-        else:
-            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
-                                                                is_rejected=False)
 
-        return render(request, self.template_name, {'join_requests': join_requests,
-                                                    'community': community,
-                                                    'status': status})
+        if community.is_admin(request.user):
+            status = kwargs.get('status', None)
+            if status == 'accepted':
+                join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=True,
+                                                                    is_rejected=False)
+            elif status == 'rejected':
+                join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
+                                                                    is_rejected=True)
+            else:
+                join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
+                                                                    is_rejected=False)
+
+            return render(request, self.template_name, {'join_requests': join_requests,
+                                                        'community': community,
+                                                        'status': status})
+        return HttpResponse(status=403)
 
 
 def approve_join_request(request, community_slug, request_id):
-    join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
-    try:
-        join_request.approve_request()
-        return HttpResponse(status=200)
-    except:
-        return HttpResponse(status=500)
+    if request.user.is_anonymous:
+        return HttpResponse(status=401)
+    community = get_object_or_404(Community, slug=community_slug)
+
+    if community.is_admin(request.user):
+        join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
+        try:
+            join_request.approve_request()
+            return HttpResponse(status=200)
+        except:
+            return HttpResponse(status=500)
+    return HttpResponse(status=403)
 
 
 def reject_join_request(request, community_slug, request_id):
-    join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
-    logger.info('joy in recjection')
-    try:
-        logger.info(request.body)
-        data = json.loads(request.body)
-        logger.info(data)
-        reject_message = data.get('reject_message', None)
-        logger.info(reject_message)
-        join_request.reject_request(reject_message=reject_message)
-        return HttpResponse(status=200)
-    except:
-        return HttpResponse(status=500)
+    if request.user.is_anonymous:
+        return HttpResponse(status=401)
+
+    community = get_object_or_404(Community, slug=community_slug)
+    if community.is_admin(request.user):
+        join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
+        logger.info('joy in recjection')
+        try:
+            logger.info(request.body)
+            data = json.loads(request.body)
+            logger.info(data)
+            reject_message = data.get('reject_message', None)
+            logger.info(reject_message)
+            join_request.reject_request(reject_message=reject_message)
+            return HttpResponse(status=200)
+        except:
+            return HttpResponse(status=500)
+    return HttpResponse(status=403)
 
 
 def join_complete(request, community_slug):
@@ -160,22 +176,26 @@ class EditCommunityView(LoginRequiredMixin, View):
 
     def get(self, request, community_slug):
         community = get_object_or_404(Community, slug=community_slug)
-        form = self.form(instance=community)
-        return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
+        if community.is_admin(request.user):
+            form = self.form(instance=community)
+            return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
+        return HttpResponse(status=403)
 
     def post(self, request, community_slug):
         form = self.form(request.POST)
         community = get_object_or_404(Community, slug=community_slug)
-        if form.is_valid():
-            community.name = form.cleaned_data['name']
-            community.description = form.cleaned_data['description']
-            community.is_private = form.cleaned_data['is_private']
-            community.require_join_approval = form.cleaned_data['require_join_approval']
+        if community.is_admin(request.user):
+            if form.is_valid():
+                community.name = form.cleaned_data['name']
+                community.description = form.cleaned_data['description']
+                community.is_private = form.cleaned_data['is_private']
+                community.require_join_approval = form.cleaned_data['require_join_approval']
 
-            community.save()
+                community.save()
 
-            return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
-        return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
+                return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
+            return render(request, self.template_name, {'form': form, 'community': community, 'edit': True})
+        return HttpResponse(status=403)
 
 
 class JoinCommunityView(LoginRequiredMixin, View):
@@ -191,8 +211,7 @@ class JoinCommunityView(LoginRequiredMixin, View):
         return redirect(reverse('communities:view', kwargs={'community_slug': community_slug}))
 
 
-def verify_join(request, community_slug):
-    logger.info(f'Verifying join request for {request.user}')
+def verify_follow(request, community_slug):
     community = get_object_or_404(Community, slug=community_slug)
     user = request.user
     if user.is_authenticated:
@@ -204,8 +223,7 @@ def verify_join(request, community_slug):
         return JsonResponse({'status': 'Not Logged In'}, status=404)
 
 
-def verify_unjoin(request, community_slug):
-    logger.info(f'Verifying unjoin request for {request.user}')
+def verify_unfollow(request, community_slug):
     community = get_object_or_404(Community, slug=community_slug)
     user = request.user
     if user.is_authenticated:
@@ -358,82 +376,96 @@ class AddCommentView(LoginRequiredMixin, View):
     template_name = 'communities/create-comment.html'
 
     def get(self, request, *args, **kwargs):
-        post_id = kwargs.get('post_id')
-        comment_id = kwargs.get('comment_id', None)
-        form = self.form()
+        communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+        if communitiy.has_access(request.user):
+            post_id = kwargs.get('post_id')
+            comment_id = kwargs.get('comment_id', None)
+            form = self.form()
 
-        if comment_id:
-            comment_context = get_object_or_404(PostComment, id=comment_id)
-        else:
-            comment_context = get_object_or_404(Post, id=post_id)
+            if comment_id:
+                comment_context = get_object_or_404(PostComment, id=comment_id)
+            else:
+                comment_context = get_object_or_404(Post, id=post_id)
 
-        return render(request, self.template_name, {'comment_context': comment_context, 'form': form})
+            return render(request, self.template_name, {'comment_context': comment_context, 'form': form})
+        return HttpResponse(status=403)
 
     def post(self, request, *args, **kwargs):
-        post_id = kwargs.get('post_id')
-        comment_id = kwargs.get('comment_id', None)
-        form = self.form(request.POST)
+        communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+        if communitiy.has_access(request.user):
+            post_id = kwargs.get('post_id')
+            comment_id = kwargs.get('comment_id', None)
+            form = self.form(request.POST)
 
-        if form.is_valid():
-            parent_comment = None
+            if form.is_valid():
+                parent_comment = None
+                if comment_id:
+                    parent_comment = get_object_or_404(PostComment, id=comment_id)
+
+                post = get_object_or_404(Post, id=post_id)
+
+                comment = PostComment.objects.create(
+                    post=post,
+                    community=post.community,
+                    user=request.user,
+                    parent_comment=parent_comment,
+                    content=form.cleaned_data['content'],
+                )
+                comment.save()
+                create_voting(request.user, post, comment)
+
+                return redirect('communities:view-post', community_slug=post.community.slug, post_id=post_id)
+
             if comment_id:
-                parent_comment = get_object_or_404(PostComment, id=comment_id)
-
-            post = get_object_or_404(Post, id=post_id)
-
-            comment = PostComment.objects.create(
-                post=post,
-                community=post.community,
-                user=request.user,
-                parent_comment=parent_comment,
-                content=form.cleaned_data['content'],
-            )
-            comment.save()
-            create_voting(request.user, post, comment)
-
-            return redirect('communities:view-post', community_slug=post.community.slug, post_id=post_id)
-
-        if comment_id:
-            comment_context = get_object_or_404(PostComment, id=comment_id)
-        else:
-            comment_context = get_object_or_404(Post, id=post_id)
-        return render(request, self.template_name, {'comment_context': comment_context, 'form': form})
+                comment_context = get_object_or_404(PostComment, id=comment_id)
+            else:
+                comment_context = get_object_or_404(Post, id=post_id)
+            return render(request, self.template_name, {'comment_context': comment_context, 'form': form})
+        return HttpResponse(status=403)
 
 
 def post_view(request, *args, **kwargs):
-    post = get_object_or_404(Post, id=kwargs['post_id'])
-    post_comments = PostComment.objects.filter(post=post)
-
-    return render(request, 'communities/view-post.html', {'post': post, 'post_comments': post_comments})
+    communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+    if communitiy.has_access(request.user):
+        post = get_object_or_404(Post, id=kwargs['post_id'])
+        post_comments = PostComment.objects.filter(post=post)
+        return render(request, 'communities/view-post.html', {'post': post, 'post_comments': post_comments})
+    return HttpResponse(status=403)
 
 
 @login_required
 def upvote_post_comment(request, *args, **kwargs):
-    post = get_object_or_404(Post, id=kwargs['post_id'])
-    if 'comment_id' in kwargs.keys():
-        post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
-        object_type = 'comment'
-        user = post_comment.user
-    else:
-        post_comment = None
-        object_type = 'post'
-        user = post.user
+    communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+    if communitiy.has_access(request.user):
+        post = get_object_or_404(Post, id=kwargs['post_id'])
+        if 'comment_id' in kwargs.keys():
+            post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
+            object_type = 'comment'
+            user = post_comment.user
+        else:
+            post_comment = None
+            object_type = 'post'
+            user = post.user
 
-    rep_change = toggle_upvote(voting_user=request.user, post=post, post_comment=post_comment)
-    data = {'rep_change': rep_change, 'vote_type': 'up', 'object_type': object_type}
-    return JsonResponse(data, status=200)
+        rep_change = toggle_upvote(voting_user=request.user, post=post, post_comment=post_comment)
+        data = {'rep_change': rep_change, 'vote_type': 'up', 'object_type': object_type}
+        return JsonResponse(data, status=200)
+    return HttpResponse(status=403)
 
 
 @login_required
 def downvote_post_comment(request, *args, **kwargs):
-    post = get_object_or_404(Post, id=kwargs['post_id'])
-    if 'comment_id' in kwargs.keys():
-        post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
-        object_type = 'comment'
-    else:
-        post_comment = None
-        object_type = 'post'
+    communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+    if communitiy.has_access(request.user):
+        post = get_object_or_404(Post, id=kwargs['post_id'])
+        if 'comment_id' in kwargs.keys():
+            post_comment = get_object_or_404(PostComment, id=kwargs['comment_id'])
+            object_type = 'comment'
+        else:
+            post_comment = None
+            object_type = 'post'
 
-    rep_change = toggle_downvote(voting_user=request.user, post=post, post_comment=post_comment)
-    data = {'rep_change': rep_change, 'vote_type': 'down', 'object_type': object_type}
-    return JsonResponse(data, status=200)
+        rep_change = toggle_downvote(voting_user=request.user, post=post, post_comment=post_comment)
+        data = {'rep_change': rep_change, 'vote_type': 'down', 'object_type': object_type}
+        return JsonResponse(data, status=200)
+    return HttpResponse(status=403)
