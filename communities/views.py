@@ -29,9 +29,8 @@ def index(request):
 
 def view_community(request, community_slug):
     community = Community.objects.get(slug=community_slug)
-    if community.require_join_approval:
-        if not community.is_member(request.user):
-            return redirect(reverse('communities:request-join', kwargs={'community_slug': community_slug}))
+    if community.has_access(request.user):
+        return redirect(reverse('communities:request-join', kwargs={'community_slug': community_slug}))
 
     posts = Post.objects.filter(community=community)
     return render(request, 'communities/community.html', {'posts': posts,
