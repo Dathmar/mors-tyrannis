@@ -10,7 +10,7 @@
         </div>
         <div class="card-text">
             <small class="text-muted">{{ post_comment.user.username }}</small>
-            <small class="text-muted">| Created: {{ post_comment.created_at|date:"F j, Y" }}</small>
+            <small class="text-muted">| Created: {{ post_comment.created_at|date:"F j, Y g:i:s" }}</small>
 
             <small class="text-muted">| <a href="{% url 'communities:comment-add-comment' post_comment.community.slug post_comment.post.id post_comment.id %}" class="card-link">Add Comment</a></small>
         </div>

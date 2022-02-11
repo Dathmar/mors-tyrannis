@@ -22,9 +22,9 @@
         </div>
         <div class="card-text">
             <small class="text-muted">{{ post.user.username }}</small>
-            <small class="text-muted">| Created: {{ post.created_at|date:"F j, Y" }}</small>
+            <small class="text-muted">| Created: {{ post.created_at|date:"F j, Y g:i:s" }}</small>
             {% if post.edited_at %}
-            <small class="text-muted">| Edited: {{ post.edited_at|date:"F j, Y" }}</small>
+            <small class="text-muted">| Edited: {{ post.edited_at|date:"F j, Y g:i:s" }}</small>
             {% endif %}
             {% if post.user == user %}
             <small class="text-muted">| <a href="{% url 'communities:edit-post' post.community.slug post.id %}">Edit</a></small>
