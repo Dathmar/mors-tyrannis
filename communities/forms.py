@@ -1,9 +1,18 @@
 from django import forms
-from .models import Post, Community
+from .models import Post, Community, CommunityJoinRequest
 
 
 class CommentForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, required=True)
+
+
+class JoinRequestForm(forms.ModelForm):
+    class Meta:
+        model = CommunityJoinRequest
+        fields = ('message',)
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 3, 'cols': 40, 'placeholder': 'Optional message'})
+        }
 
 
 class CommunityForm(forms.ModelForm):

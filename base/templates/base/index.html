@@ -8,17 +8,16 @@
                 <strong>You should login for the beta!</strong><br>
                 <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
             </div>
+    {% endif %}
+    {%  if posts %}
+        {% for post in posts %}
+        {% include 'communities/post-card.html' %}
+        {% endfor %}
     {% else %}
-        {%  if posts %}
-            {% for post in posts %}
-            {% include 'communities/post-card.html' %}
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-info">
-                <strong>You should follow a community!</strong><br>
-                <a href="{% url 'communities:list' %}" class="btn btn-primary">See our communities</a>
-            </div>
-        {% endif %}
+        <div class="alert alert-info">
+            <strong>You should follow a community!</strong><br>
+            <a href="{% url 'communities:list' %}" class="btn btn-primary">See our communities</a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

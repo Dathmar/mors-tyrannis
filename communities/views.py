@@ -3,31 +3,121 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-from django.template.loader import render_to_string
+from django.db.models import Q
 
-from .forms import CommunityForm, CommentForm, LinkPostForm, TextPostForm, ImagePostForm
-from .models import Community, Post, PostComment
+from .forms import CommunityForm, CommentForm, LinkPostForm, TextPostForm, ImagePostForm, JoinRequestForm
+from .models import Community, Post, PostComment, CommunityMember, CommunityJoinRequest
 from .voting.vote_functions import toggle_upvote, toggle_downvote, create_voting
 
 from datetime import datetime
 import logging
+import json
 
 logger = logging.getLogger('app_api')
 
 
 # Create your views here.
 def index(request):
-    communities = Community.objects.all()
+    if request.user.is_authenticated:
+        communities = Community.objects.filter(
+            Q(is_private=False)
+            | Q(id__in=CommunityMember.objects.filter(user=request.user).values_list('community__id', flat=True)))
+    else:
+        communities = Community.objects.filter(is_private=False)
     return render(request, 'communities/index.html', {'communities': communities})
 
 
 def view_community(request, community_slug):
     community = Community.objects.get(slug=community_slug)
+    if community.require_join_approval:
+        if not community.is_member(request.user):
+            return redirect(reverse('communities:request-join', kwargs={'community_slug': community_slug}))
+
     posts = Post.objects.filter(community=community)
     return render(request, 'communities/community.html', {'posts': posts,
                                                           'community': community,
                                                           'is_community_member': community.is_member(request.user),
                                                           'is_follower': community.is_follower(request.user)})
+
+
+class RequestJoinView(LoginRequiredMixin, View):
+    login_url = f'/accounts/login/?next=/c/'
+    form = JoinRequestForm
+    template_name = 'communities/join-community.html'
+
+    def get(self, request, *args, **kwargs):
+        community_slug = kwargs.get('community_slug')
+        community = get_object_or_404(Community, slug=community_slug)
+        form = self.form()
+
+        if CommunityJoinRequest.objects.filter(community=community, user=request.user).exists():
+            return redirect(reverse('communities:request-join-done', kwargs={'community_slug': community_slug}))
+        return render(request, self.template_name, {'form': form, 'community': community})
+
+    def post(self, request, *args, **kwargs):
+        community_slug = kwargs.get('community_slug')
+        community = get_object_or_404(Community, slug=community_slug)
+        form = self.form(request.POST)
+        if form.is_valid():
+            request_obj = form.save(commit=False)
+            request_obj.user = request.user
+            request_obj.community = community
+            request_obj.save()
+            return redirect(reverse('communities:request-join-done', kwargs={'community_slug': community_slug}))
+        return render(request, self.template_name, {'form': form, 'community': community})
+
+
+class ReviewJoinRequests(LoginRequiredMixin, View):
+    login_url = f'/accounts/login/?next=/c/'
+    template_name = 'communities/review-join-requests.html'
+
+    def get(self, request, *args, **kwargs):
+        community_slug = kwargs.get('community_slug')
+        community = get_object_or_404(Community, slug=community_slug)
+        status = kwargs.get('status', None)
+        if status == 'accepted':
+            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=True,
+                                                                is_rejected=False)
+        elif status == 'rejected':
+            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
+                                                                is_rejected=True)
+        else:
+            join_requests = CommunityJoinRequest.objects.filter(community__slug=community_slug, is_approved=False,
+                                                                is_rejected=False)
+
+        return render(request, self.template_name, {'join_requests': join_requests,
+                                                    'community': community,
+                                                    'status': status})
+
+
+def approve_join_request(request, community_slug, request_id):
+    join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
+    try:
+        join_request.approve_request()
+        return HttpResponse(status=200)
+    except:
+        return HttpResponse(status=500)
+
+
+def reject_join_request(request, community_slug, request_id):
+    join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
+    logger.info('joy in recjection')
+    try:
+        logger.info(request.body)
+        data = json.loads(request.body)
+        logger.info(data)
+        reject_message = data.get('reject_message', None)
+        logger.info(reject_message)
+        join_request.reject_request(reject_message=reject_message)
+        return HttpResponse(status=200)
+    except:
+        return HttpResponse(status=500)
+
+
+def join_complete(request, community_slug):
+    community = get_object_or_404(Community, slug=community_slug)
+    join_request = CommunityJoinRequest.objects.filter(community=community, user=request.user).first()
+    return render(request, 'communities/join-community-done.html', {'community': community, 'join_request': join_request})
 
 
 class CreateCommunityView(LoginRequiredMixin, View):
@@ -50,6 +140,14 @@ class CreateCommunityView(LoginRequiredMixin, View):
                 require_join_approval=form.cleaned_data['require_join_approval'],
             )
             community.save()
+            member = CommunityMember(
+                community=community,
+                user=request.user,
+                is_admin=True,
+                is_owner=True,
+                following=True,
+            )
+            member.save()
 
             return redirect(reverse('communities:detail', kwargs={'community_slug': community.slug}))
         return render(request, self.template_name, {'form': form})
@@ -97,13 +195,26 @@ def verify_join(request, community_slug):
     logger.info(f'Verifying join request for {request.user}')
     community = get_object_or_404(Community, slug=community_slug)
     user = request.user
-    if request.user.is_authenticated:
+    if user.is_authenticated:
         if community.add_follower(user):
             return JsonResponse({'success': True}, status=200)
         else:
             return JsonResponse({'success': False}, status=400)
     else:
-        return JsonResponse({'status': 'success'}, status=404)
+        return JsonResponse({'status': 'Not Logged In'}, status=404)
+
+
+def verify_unjoin(request, community_slug):
+    logger.info(f'Verifying unjoin request for {request.user}')
+    community = get_object_or_404(Community, slug=community_slug)
+    user = request.user
+    if user.is_authenticated:
+        if community.remove_follower(user):
+            return JsonResponse({'success': True}, status=200)
+        else:
+            return JsonResponse({'success': False}, status=400)
+    else:
+        return JsonResponse({'status': 'Not Logged In'}, status=404)
 
 
 def change_form_type(request, form_type):

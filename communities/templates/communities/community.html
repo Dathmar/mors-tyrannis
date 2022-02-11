@@ -14,13 +14,24 @@
         </div>
     </div>
     {% endif %}
+    {% if community.has_join_requests %}
     <div class="row">
-        {% if is_community_member %}
-        <a href="{% url 'communities:create-post' community.slug %}" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Create Post</a>
-        {% endif %}
-        {% if not is_follower %}
-        <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Follow Community</button>
-        {% endif %}
+        <div class="col">
+            <a href="{% url 'communities:review-join-requests' community.slug %}" class="btn btn-primary">View Join Requests</a>
+        </div>
+    </div>
+    {% endif %}
+    <div class="row">
+        <div id="post">
+            <a href="{% url 'communities:create-post' community.slug %}" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Create Post</a>
+        </div>
+        <div id="join">
+            {% if is_follower %}
+            <button onclick="unjoin_attempt('{{ community.slug }}')" id="unjoin_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Unfollow</button>
+            {% else %}
+            <button onclick="join_attempt('{{ community.slug }}')" id="join_community_button" class="btn btn-primary rounded-3 mt-3" style="width: 11em;">Follow</button>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
     <div class="row">

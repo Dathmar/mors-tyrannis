@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block extra_scripts %}
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+{% endblock %}
+{% block extra_styles %}
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+{% endblock %}
+{% block content %}
+<body>
+  <div id="editor"></div>
+</body>
+    <p>https://github.com/nhn/tui.editor/tree/master/apps/editor</p>
+{% endblock %}
+{% block scripts %}
+<script>
+    const Editor = toastui.Editor;
+    const editor = new Editor({
+        el: document.querySelector('#editor'),
+        height: '500px',
+        initialEditType: 'wysiwyg',
+        previewStyle: 'vertical',
+        usageStatistics: false,
+    });
+    editor.getMarkdown();
+</script>
+
+{% endblock %}

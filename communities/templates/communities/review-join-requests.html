@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}<title>Mors Tyrannis | Review Requests {{ community.name }}</title>{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>{{ community.name }}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h2>
+                Review Join Requests
+            </h2>
+            {% if status %}
+                <p>{{ status }} requests</p>
+            {% else %}
+                <p>Open Requests</p>
+            {% endif %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>User Created Date</th>
+                        <th>Join Request Date</th>
+                        <th>Accepted</th>
+                        <th>Rejected</th>
+                        <th>Action</th>
+                        <th>Reject Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for join_request in join_requests %}
+                    <tr>
+                        <td>{{ join_request.user.username }}</td>
+                        <td>{{ join_request.user.date_joined|date:"F j, Y g:i:s" }}</td>
+                        <td>{{ join_request.created_at|date:"F j, Y g:i:s" }}</td>
+                        <td>{{ join_request.is_approved }}</td>
+                        <td>{{ join_request.is_rejected }}</td>
+                        <td>
+                            <button id="accept-{{ join_request.id }}" onclick="accept_request('{{ join_request.get_approval_url }}' ,this)" class="btn btn-primary" style="width: 6rem" value="{{ join_request.id }}">Accept</button>
+                            <button id="accept-{{ join_request.id }}" onclick="reject_request('{{ join_request.get_rejection_url }}', this)" class="btn btn-primary" style="width: 6rem" value="{{ join_request.id }}">Reject</button>
+                        </td>
+                        <td><textarea cols="20" rows="3" id="reject-message-{{ join_request.id }}"></textarea></td></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/session_cookie.js' %}"></script>
+<script src="{% static 'js/join-requests.js' %}"></script>
+{% endblock %}

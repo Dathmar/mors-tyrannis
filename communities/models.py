@@ -38,6 +38,10 @@ class Community(models.Model):
             return CommunityMember.objects.filter(community=self, user=user).exists()
         return False
 
+    def is_admin(self, user):
+        if user.is_authenticated:
+            return CommunityMember.objects.filter(community=self, user=user, is_admin=True).exists()
+
     def is_follower(self, user):
         if user.is_authenticated:
             return CommunityMember.objects.filter(community=self, user=user, following=True).exists()
@@ -63,6 +67,21 @@ class Community(models.Model):
             return True
         return False
 
+    def remove_follower(self, user):
+        if not self.is_member(user):
+            return True
+
+        if self.is_follower(user):
+            member = CommunityMember.objects.get(community=self, user=user)
+            member.following = False
+            member.save()
+            return True
+
+        return False
+
+    def has_join_requests(self):
+        return CommunityJoinRequest.objects.filter(community=self, is_rejected=False, is_approved=False).exists()
+
     def save(self, *args, **kwargs):
         if not Community.objects.filter(id=self.id).exists():
             self.slug = slugify(self.name)
@@ -76,6 +95,8 @@ class CommunityJoinRequest(models.Model):
     message = models.TextField()
 
     is_approved = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+
     reject_message = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -85,13 +106,25 @@ class CommunityJoinRequest(models.Model):
         return f"{self.user} - {self.community}"
 
     def approve_request(self):
+        if not CommunityMember.objects.filter(community=self.community, user=self.user).exists():
+            cm = CommunityMember.objects.create(community=self.community, user=self.user)
+            cm.save()
+
         self.is_approved = True
+        self.is_rejected = False
         self.save()
 
     def reject_request(self, reject_message):
         self.is_approved = False
+        self.is_rejected = True
         self.reject_message = reject_message
         self.save()
+
+    def get_approval_url(self):
+        return reverse('communities:approve-join-request', kwargs={'community_slug': self.community.slug, 'request_id': self.id})
+
+    def get_rejection_url(self):
+        return reverse('communities:reject-join-request', kwargs={'community_slug': self.community.slug, 'request_id': self.id})
 
 
 class CommunityMember(models.Model):
@@ -103,6 +136,7 @@ class CommunityMember(models.Model):
     is_admin = models.BooleanField(default=False)
     is_owner = models.BooleanField(default=False)
     following = models.BooleanField(default=False)
+    banned = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
+
 {% block title %}<title>Mors Tyrannis | Join {{ community.name }}</title>{% endblock %}
 {% block content %}
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h1>Join Community</h1>
+            <h1>Join {{ community.name }}</h1>
         </div>
     </div>
     <div class="row">
@@ -14,9 +15,10 @@
                 <h2>
                     Request Approval
                 </h2>
-                {{ form.as_p }}
+                <table class="table">
+                {{ form.as_table }}
+                </table>
                 <input type="submit" class="btn btn-primary" value="Request Approval">
-
             </form>
         </div>
     </div>

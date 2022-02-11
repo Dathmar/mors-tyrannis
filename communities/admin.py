@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, PostCommentLike, CommunityMember, PostComment, Community, CommunityBans
+from .models import Post, PostCommentLike, CommunityMember, PostComment, Community, CommunityBans, CommunityJoinRequest
 
 
 @admin.register(Community)
@@ -32,6 +32,13 @@ class CommunityMemberAdmin(admin.ModelAdmin):
     search_fields = ('user', 'community')
     list_editable = ('community', 'community_rep')
 
+
 @admin.register(PostComment)
 class PostCommentsAdmin(admin.ModelAdmin):
     list_display = ('user', 'post', 'parent_comment')
+
+
+@admin.register(CommunityJoinRequest)
+class CommunityJoinRequestAdmin(admin.ModelAdmin):
+    list_display = ('user', 'community', 'is_approved', 'is_rejected')
+

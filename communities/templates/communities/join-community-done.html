@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}<title>Mors Tyrannis | Join {{ community.name }}</title>{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Join {{ community.name }}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            {% if not join_request.is_approved and not join_request.is_rejected %}
+            <p>You have successfully requested to joined {{ community.name }}.</p>
+            <p>Please wait for a community moderator to review your request.</p>
+            <p>In the mean time you can browse other communities</p>
+            <a class="btn btn-primary" href="{% url 'communities:list' %}">Browse Communities.</a>
+            {% elif join_request.is_approved %}
+            <p>Your request has been approved.  You can now view the community.</p>
+            <a class="btn btn-primary" href="{% url 'communities:detail' community.slug %}">View Community.</a>
+            {% elif join_request.is_rejected %}
+            <p>Your request has been rejected.</p>
+                {% if join_request.reject_message %}
+                <p>The reason provided is:</p>
+                <p>{{ join_request.reject_message|linebreaks }}</p>
+                {% endif %}
+            <a class="btn btn-primary" href="{% url 'communities:list' %}">Browse Communities.</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
