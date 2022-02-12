@@ -29,7 +29,7 @@ def index(request):
 
 def view_community(request, community_slug):
     community = Community.objects.get(slug=community_slug)
-    if community.has_access(request.user):
+    if not community.has_access(request.user):
         return redirect(reverse('communities:request-join', kwargs={'community_slug': community_slug}))
 
     posts = Post.objects.filter(community=community)
