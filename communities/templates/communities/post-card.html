@@ -15,7 +15,7 @@
         {% elif post.post_type == 'image' %}
         <img src="{{ post.image.url }}" class="card-img-top" alt="">
         {% endif %}
-        <div class="card-text d-flex">
+        <div class="card-text d-flex pt-1">
             <div id="post-up-arrow-{{ post.id }}" class="arrow {% if post|has_user_upvote:user %}up-arrow-active{% else %}up-arrow{% endif %} "  onclick="vote_post('{{ post.get_upvote_url }}', {{ post.id }})"></div>
             <div id="post-rep-{{ post.id }}" class="text-center" style="width:30px">{{ post.total_rep }}</div>
             <div id="post-down-arrow-{{ post.id }}" class="arrow {% if post|has_user_downvote:user %}down-arrow-active{% else %}down-arrow{% endif %} "  onclick="vote_post('{{ post.get_downvote_url }}', {{ post.id }})"></div>
