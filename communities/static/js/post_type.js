@@ -7,13 +7,14 @@ async function change_post_type() {
         response => response.json()
     ).then(
         data => {
+            let title = $('#id_title').val();
             form_container.html(data.form_html);
+            $('#id_title').val(title);
             if (post_type === 'image') {
                 form_container.attr('enctype', "multipart/form-data")
             } else {
                 form_container.removeAttr('enctype')
             }
-
             form_type = $('#id_post_type');
             form_type.val(post_type);
         }
