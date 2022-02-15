@@ -24,6 +24,7 @@ urlpatterns = [
     path('<slug:community_slug>/comments/<int:post_id>/add-comment/', views.AddCommentView.as_view(), name='post-add-comment'),
     path('<slug:community_slug>/comments/<int:post_id>/upvote/', views.upvote_post_comment, name='upvote-post'),
     path('<slug:community_slug>/comments/<int:post_id>/downvote/', views.downvote_post_comment, name='downvote-post'),
+    path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/edit/', views.EditCommentView.as_view(), name='edit-comment'),
     path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/add-comment/', views.AddCommentView.as_view(), name='comment-add-comment'),
     path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/upvote/', views.upvote_post_comment, name='upvote-comment'),
     path('<slug:community_slug>/comments/<int:post_id>/comment/<int:comment_id>/downvote/', views.downvote_post_comment, name='downvote-comment'),

@@ -11,7 +11,12 @@
         <div class="card-text">
             <small class="text-muted">{{ post_comment.user.username }}</small>
             <small class="text-muted">| Created: {{ post_comment.created_at|date:"F j, Y g:i:s" }}</small>
-
+            {% if post_comment.edited_at %}
+            <small class="text-muted">| Edited: {{ post_comment.edited_at|date:"F j, Y g:i:s" }}</small>
+            {% endif %}
+            {% if post_comment.user == user %}
+            <small class="text-muted">| <a href="{% url 'communities:edit-comment' post_comment.community.slug post_comment.post.id post_comment.id %}">Edit</a></small>
+            {% endif %}
             <small class="text-muted">| <a href="{% url 'communities:comment-add-comment' post_comment.community.slug post_comment.post.id post_comment.id %}" class="card-link">Add Comment</a></small>
         </div>
     </div>

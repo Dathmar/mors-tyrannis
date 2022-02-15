@@ -35,6 +35,8 @@ class Community(models.Model):
 
     def has_access(self, user):
         if self.require_join_approval:
+            if user.is_anonymous:
+                return False
             if self.is_member(user):
                 return True
             return CommunityJoinRequest.objects.filter(community=self, user=user, is_approved=True).exists()
@@ -128,10 +130,12 @@ class CommunityJoinRequest(models.Model):
         self.save()
 
     def get_approval_url(self):
-        return reverse('communities:approve-join-request', kwargs={'community_slug': self.community.slug, 'request_id': self.id})
+        return reverse('communities:approve-join-request',
+                       kwargs={'community_slug': self.community.slug, 'request_id': self.id})
 
     def get_rejection_url(self):
-        return reverse('communities:reject-join-request', kwargs={'community_slug': self.community.slug, 'request_id': self.id})
+        return reverse('communities:reject-join-request',
+                       kwargs={'community_slug': self.community.slug, 'request_id': self.id})
 
 
 class CommunityMember(models.Model):
@@ -232,7 +236,8 @@ class Post(models.Model):
         return reverse('communities:upvote-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
 
     def get_downvote_url(self):
-        return reverse('communities:downvote-post', kwargs=({'post_id': self.id, 'community_slug': self.community.slug}))
+        return reverse('communities:downvote-post', kwargs=({'post_id': self.id,
+                                                             'community_slug': self.community.slug}))
 
     def total_rep(self):
         return self.like_count - self.dislike_count
@@ -240,7 +245,10 @@ class Post(models.Model):
     def get_embed(self):
         if self.post_type == 'link':
             if 'youtube' in self.url:
-                return f'<iframe width="100%" height="100%" src="{you_tube_embed_url(self.url)}" title="YouTube video player" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+                return f'<iframe width="100%" height="100%" ' \
+                       f'src="{you_tube_embed_url(self.url)}" title="YouTube video player" ' \
+                       f'frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; ' \
+                       f'gyroscope; picture-in-picture" allowfullscreen></iframe>'
         return None
 
 
@@ -259,6 +267,8 @@ class PostComment(models.Model):
     dislike_count = models.IntegerField(default=0)
 
     content = models.TextField()
+
+    edited_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

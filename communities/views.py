@@ -41,13 +41,20 @@ def view_community(request, community_slug):
 
 
 class RequestJoinView(LoginRequiredMixin, View):
-    login_url = f'/accounts/login/?next=/c/'
     form = JoinRequestForm
     template_name = 'communities/join-community.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        return f'/accounts/login/?next={reverse("communities:request-join", kwargs={"community_slug": community_slug})}'
 
     def get(self, request, *args, **kwargs):
         community_slug = kwargs.get('community_slug')
         community = get_object_or_404(Community, slug=community_slug)
+
+        if community.has_access(request.user):
+            return redirect(reverse('communities:detail', kwargs={'community_slug': community_slug}))
+
         form = self.form()
 
         if CommunityJoinRequest.objects.filter(community=community, user=request.user).exists():
@@ -68,8 +75,12 @@ class RequestJoinView(LoginRequiredMixin, View):
 
 
 class ReviewJoinRequests(LoginRequiredMixin, View):
-    login_url = f'/accounts/login/?next=/c/'
     template_name = 'communities/review-join-requests.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        reverse_url = reverse("communities:review-join-requests", kwargs={"community_slug": community_slug})
+        return f'/accounts/login/?next={reverse_url}'
 
     def get(self, request, *args, **kwargs):
         community_slug = kwargs.get('community_slug')
@@ -115,7 +126,7 @@ def reject_join_request(request, community_slug, request_id):
     community = get_object_or_404(Community, slug=community_slug)
     if community.is_admin(request.user):
         join_request = get_object_or_404(CommunityJoinRequest, id=request_id)
-        logger.info('joy in recjection')
+        logger.info('joy in rejection')
         try:
             logger.info(request.body)
             data = json.loads(request.body)
@@ -132,7 +143,8 @@ def reject_join_request(request, community_slug, request_id):
 def join_complete(request, community_slug):
     community = get_object_or_404(Community, slug=community_slug)
     join_request = CommunityJoinRequest.objects.filter(community=community, user=request.user).first()
-    return render(request, 'communities/join-community-done.html', {'community': community, 'join_request': join_request})
+    return render(request, 'communities/join-community-done.html', {'community': community,
+                                                                    'join_request': join_request})
 
 
 class CreateCommunityView(LoginRequiredMixin, View):
@@ -169,9 +181,12 @@ class CreateCommunityView(LoginRequiredMixin, View):
 
 
 class EditCommunityView(LoginRequiredMixin, View):
-    login_url = f'/accounts/login/?next=/c/'
     form = CommunityForm
     template_name = 'communities/create-community.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        return f'/accounts/login/?next={reverse("communities:edit", kwargs={"community_slug": community_slug})}'
 
     def get(self, request, community_slug):
         community = get_object_or_404(Community, slug=community_slug)
@@ -254,6 +269,12 @@ def get_form_type(post_type, data=None, files=None, initial=None):
 class EditPostView(LoginRequiredMixin, View):
     login_url = f'/accounts/login/?next=/c/'
     template_name = 'communities/create-post.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        post_id = self.kwargs.get('post_id')
+        return f'/accounts/login/?next=' \
+               f'{reverse("communities:edit-post", kwargs={"community_slug": community_slug, "post_id": post_id})}'
 
     def get(self, request, community_slug, post_id):
         post = get_object_or_404(Post, id=post_id)
@@ -350,6 +371,10 @@ class CreatePostView(LoginRequiredMixin, View):
     template_name = 'communities/create-post.html'
     template_post_created = 'communities/index.html'
 
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        return f'/accounts/login/?next={reverse("communities:create", kwargs={"community_slug": community_slug})}'
+
     def get(self, request, community_slug=None):
         image_form = self.image_form()
         return render(request, self.template_name, {'form': image_form})
@@ -369,10 +394,83 @@ class CreatePostView(LoginRequiredMixin, View):
         return render(request, self.template_name, {'form': form})
 
 
-class AddCommentView(LoginRequiredMixin, View):
-    login_url = f'/accounts/login/?next=/c/'  # need to route back to the specific post/comment
+class EditCommentView(LoginRequiredMixin, View):
     form = CommentForm
     template_name = 'communities/create-comment.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        post_id = self.kwargs.get('post_id')
+        comment_id = self.kwargs.get('comment_id', None)
+        if comment_id:
+            reverse_url = reverse('communities:comment-add-comment',
+                                  kwargs={'community_slug': community_slug,
+                                          'post_id': post_id,
+                                          'comment_id': comment_id})
+        else:
+            reverse_url = reverse('communities:post-add-comment', kwargs={'community_slug': community_slug,
+                                                                          'post_id': post_id})
+        return f'/accounts/login/?next={reverse_url}'
+
+    def get(self, request, *args, **kwargs):
+        community = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+        comment_id = kwargs.get('comment_id', None)
+        comment = get_object_or_404(PostComment, id=comment_id)
+        if community.has_access(request.user) and comment.user == request.user:
+            form = self.form(instance=comment)
+
+            if comment.parent_comment:
+                comment_context = comment.parent_comment
+            else:
+                comment_context = comment.post
+
+            if request.user == comment.user:
+                return render(request, self.template_name, {'form': form,
+                                                            'comment_context': comment_context,
+                                                            'edit': True})
+
+        return HttpResponse(status=403)
+
+    def post(self, request, *args, **kwargs):
+        community = get_object_or_404(Community, slug=kwargs.get('community_slug'))
+        comment_id = kwargs.get('comment_id', None)
+        comment = get_object_or_404(PostComment, id=comment_id)
+        if community.has_access(request.user) and comment.user == request.user:
+            post = comment.post
+            form = self.form(request.POST)
+
+            if form.is_valid():
+                comment.content = form.cleaned_data['content']
+                comment.edited_at = datetime.now()
+                comment.save()
+
+                return redirect('communities:view-post', community_slug=post.community.slug, post_id=post.id)
+
+            if comment_id:
+                comment_context = get_object_or_404(PostComment, id=comment_id)
+            else:
+                comment_context = get_object_or_404(Post, id=post.id)
+            return render(request, self.template_name, {'comment_context': comment_context, 'form': form, 'edit': True})
+        return HttpResponse(status=403)
+
+
+class AddCommentView(LoginRequiredMixin, View):
+    form = CommentForm
+    template_name = 'communities/create-comment.html'
+
+    def get_login_url(self):
+        community_slug = self.kwargs.get('community_slug')
+        post_id = self.kwargs.get('post_id')
+        comment_id = self.kwargs.get('comment_id', None)
+        if comment_id:
+            reverse_url = reverse('communities:comment-add-comment',
+                                  kwargs={'community_slug': community_slug,
+                                          'post_id': post_id,
+                                          'comment_id': comment_id})
+        else:
+            reverse_url = reverse('communities:post-add-comment', kwargs={'community_slug': community_slug,
+                                                                          'post_id': post_id})
+        return f'/accounts/login/?next={reverse_url}'
 
     def get(self, request, *args, **kwargs):
         communitiy = get_object_or_404(Community, slug=kwargs.get('community_slug'))
