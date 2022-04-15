@@ -37,7 +37,8 @@ def view_community(request, community_slug):
                                                           'community': community,
                                                           'is_community_member': community.is_member(request.user),
                                                           'is_follower': community.is_follower(request.user),
-                                                          'is_admin': community.is_admin(request.user)})
+                                                          'is_admin': community.is_admin(request.user),
+                                                          'is_index': False})
 
 
 class RequestJoinView(LoginRequiredMixin, View):

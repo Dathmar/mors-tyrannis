@@ -11,4 +11,4 @@ def index(request):
     else:
         communities = Community.objects.filter(auto_follow=True)
         posts = Post.objects.filter(community__in=communities)[:20]
-    return render(request, 'base/index.html', {'posts': posts})
+    return render(request, 'base/index.html', {'posts': posts, 'is_index': True})

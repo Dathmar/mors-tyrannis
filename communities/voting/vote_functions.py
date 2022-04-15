@@ -1,6 +1,7 @@
 from communities.models import PostCommentLike, CommunityMember
 from users.models import UserMeta
 import logging
+from django.db.models import F
 
 logger = logging.getLogger('app_api')
 
@@ -11,14 +12,14 @@ def toggle_upvote(voting_user, post, post_comment=None):
     rep_change = 0
     if remove_downvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change += 1
-        obj.dislike_count -= 1
+        obj.dislike_count = F('dislike_count') - 1
 
     if remove_upvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change -= 1
-        obj.like_count -= 1
-    else:
+        obj.like_count = F('like_count') - 1
+    else:  # add upvote because it doesn't exist
         rep_change += 1
-        obj.like_count += 1
+        obj.like_count = F('like_count') + 1
         add_upvote(user=voting_user, post=post, post_comment=post_comment)
 
     add_user_rep(rep_change, post, post_comment)
@@ -32,14 +33,14 @@ def toggle_downvote(voting_user, post, post_comment=None):
     rep_change = 0
     if remove_upvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change -= 1
-        obj.like_count -= 1
+        obj.like_count = F('like_count') - 1
 
     if remove_downvote_if_exists(user=voting_user, post=post, post_comment=post_comment):
         rep_change += 1
-        obj.dislike_count -= 1
+        obj.dislike_count = F('dislike_count') - 1
     else:
         rep_change -= 1
-        obj.dislike_count += 1
+        obj.dislike_count = F('dislike_count') + 1
         add_downvote(user=voting_user, post=post, post_comment=post_comment)
 
     add_user_rep(rep_change, post, post_comment)
@@ -126,6 +127,6 @@ def create_voting(user, post, post_comment=None):
 
     add_user_rep(rep_val=1, post=post, post_comment=post_comment)
     add_upvote(user=user, post=post, post_comment=post_comment)
-    obj.like_count += 1
+    obj.like_count = F('like_count') + 1
     obj.save()
 

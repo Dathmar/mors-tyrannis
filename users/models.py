@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import F
 from django.utils.timezone import now
 
 
@@ -13,5 +14,5 @@ class UserMeta(models.Model):
         return self.user.username
 
     def add_reputation(self, rep):
-        self.reputation += rep
+        self.reputation = F('reputation') + rep
         self.save()
