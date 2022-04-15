@@ -32,6 +32,11 @@ body {
     max-width: 1000px !important;
 }
 
+.card #top-card a {
+    text-decoration: none!important;
+    color: #000!important;
+}
+
 .video-container {
     position: relative;
     padding-bottom: 56.25%;
@@ -46,23 +51,4 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

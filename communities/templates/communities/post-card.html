@@ -2,6 +2,10 @@
 {% load user_tags %}
 <div class="card">
     <div class="card-body">
+        {% if is_index %}
+        <a href="{% url 'communities:detail' post.community.slug %}">{{ post.community.name }}</a>
+        {% else %}
+        {% endif %}
         {% if post.post_type == 'link' %}
         <a href="{{ post.url }}"><h5 class="card-title">{{ post.title }}</h5></a>
         {% if post.get_embed != None %}
